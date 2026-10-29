@@ -1,0 +1,210 @@
+import { Html, OrbitControls } from '@react-three/drei'
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
+import * as THREE from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import { carcassBox, carcassYRanges, dimsLabel, footprint, heightRange } from '../catalog'
+import { itemBox, wallOutward, wallPolygon } from '../geometry'
+import { useStore } from '../store'
+import type { Item, Settings, Wall } from '../types'
+import { DimLine3D, Z_LABELS } from './DimLine3D'
+import { Furniture } from './Furniture'
+import { MAT } from './materials'
+
+function WallMesh({ wall, walls, height, transparent }: { wall: Wall; walls: Wall[]; height: number; transparent: boolean }) {
+  const geom = useMemo(() => {
+    const poly = wallPolygon(wall, walls)
+    const shape = new THREE.Shape(poly.map((p) => new THREE.Vector2(p.x, -p.y)))
+    const g = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false })
+    g.rotateX(-Math.PI / 2)
+    return g
+  }, [wall, walls, height])
+  useEffect(() => () => geom.dispose(), [geom])
+  const mesh = useRef<THREE.Mesh>(null)
+  // przekrój: ściana, za którą stoi kamera, znika
+  useFrame(({ camera }) => {
+    if (!mesh.current) return
+    const n = wallOutward(wall)
+    const side = (camera.position.x - wall.x1) * n.x + (camera.position.z - wall.y1) * n.y
+    mesh.current.visible = side < 0
+  })
+  const select = (e: ThreeEvent<MouseEvent>) => {
+    if (e.delta > 4) return
+    e.stopPropagation()
+    useStore.getState().select({ kind: 'wall', id: wall.id })
+  }
+  return <mesh ref={mesh} geometry={geom} material={MAT.wall(transparent)} receiveShadow castShadow={!transparent} onClick={select} />
+}
+
+function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: Settings; selected: boolean }) {
+  const { w, d } = footprint(item, s)
+  const [y0, y1] = heightRange(item, s)
+  // po zaznaczeniu zamiast gabarytu całości pokazujemy korpus (fronty mają własne etykiety)
+  const dims = s.showDims && !selected ? dimsLabel(item, s) : null
+  const cb = selected ? carcassBox(item, s) : null
+  const carcassYs = cb ? carcassYRanges(item, s) : []
+  const tagRef = useDimsFontSize([item.x, (y0 + y1) / 2, item.y])
+  const select = (e: ThreeEvent<MouseEvent>) => {
+    if (e.delta > 4) return
+    e.stopPropagation()
+    useStore.getState().select({ kind: 'item', id: item.id })
+  }
+  return (
+    <group position={[item.x, 0, item.y]} rotation={[0, (-item.rot * Math.PI) / 2, 0]} onClick={select}>
+      <Furniture item={item} items={items} s={s} />
+      {dims && (
+        // blat: etykieta na przedniej krawędzi, reszta: środek frontu
+        <Html position={[0, item.type === 'countertop' ? y1 + 1 : (y0 + y1) / 2, d / 2 + 1]} center occlude zIndexRange={Z_LABELS}>
+          <div ref={tagRef} className="dims-3d">
+            {dims}
+          </div>
+        </Html>
+      )}
+      {selected && cb && carcassYs.length > 0
+        ? carcassYs.map(([a, b], i) => (
+            <mesh key={i} position={[(cb.x0 + cb.x1) / 2, (a + b) / 2, (cb.z0 + cb.z1) / 2]} material={MAT.selection()} raycast={() => null}>
+              <boxGeometry args={[cb.x1 - cb.x0 + 0.4, b - a + 0.4, cb.z1 - cb.z0 + 0.4]} />
+            </mesh>
+          ))
+        : selected && (
+            <mesh position={[0, (y0 + y1) / 2, 0]} material={MAT.selection()} raycast={() => null}>
+              <boxGeometry args={[w + 0.6, y1 - y0 + 0.6, d + 0.6]} />
+            </mesh>
+          )}
+      {cb && carcassYs.length > 0 && (
+        <group>
+          {/* szerokość po górnej przedniej krawędzi korpusu, głębokość po prawym boku, wysokość przy lewej krawędzi */}
+          <DimLine3D from={[cb.x0, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.x1 - cb.x0} />
+          <DimLine3D from={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z0]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.z1 - cb.z0} />
+          {carcassYs.map(([a, b], i) => (
+            <DimLine3D key={i} from={[cb.x0 - 3, a, cb.z1]} to={[cb.x0 - 3, b, cb.z1]} tick={[2, 0, 0]} value={b - a} />
+          ))}
+        </group>
+      )}
+    </group>
+  )
+}
+
+const tmp = new THREE.Vector3()
+
+/**
+ * Czcionka etykiety wymiarów maleje z odległością kamery, w granicach 7–10 px.
+ * Liczone tutaj, bo dzieci <Html> renderują się poza kontekstem Canvas (bez useFrame).
+ */
+function useDimsFontSize(at: [number, number, number]) {
+  const ref = useRef<HTMLDivElement>(null)
+  useFrame(({ camera }) => {
+    if (!ref.current) return
+    const dist = camera.position.distanceTo(tmp.set(...at))
+    ref.current.style.fontSize = `${Math.max(7, Math.min(10, 3000 / dist)).toFixed(1)}px`
+  })
+  return ref
+}
+
+/** Tylko w trybie deweloperskim: dostęp do sceny z konsoli (kontrola wymiarów narysowanych płyt). */
+function DevSceneHandle() {
+  const scene = useThree((st) => st.scene)
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __kitchenScene?: THREE.Scene }).__kitchenScene = scene
+  }, [scene])
+  return null
+}
+
+function bounds(walls: Wall[], items: Item[], s: Settings) {
+  const xs: number[] = []
+  const ys: number[] = []
+  for (const w of walls) xs.push(w.x1, w.x2), ys.push(w.y1, w.y2)
+  for (const i of items) {
+    const b = itemBox(i, s)
+    xs.push(b.minX, b.maxX)
+    ys.push(b.minY, b.maxY)
+  }
+  if (!xs.length) return { minX: 0, maxX: 400, minY: 0, maxY: 300 }
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) }
+}
+
+/** Kamera na wysokości wzroku, z lewego dołu rzutu, patrzy na środek zabudowy. */
+function cameraPose(b: ReturnType<typeof bounds>) {
+  const cx = (b.minX + b.maxX) / 2
+  const cz = (b.minY + b.maxY) / 2
+  const span = Math.max(b.maxX - b.minX, b.maxY - b.minY, 200)
+  return {
+    position: [cx - span * 0.25, 240, b.maxY + span * 0.5] as [number, number, number],
+    target: [cx, 100, cz - span * 0.05] as [number, number, number],
+  }
+}
+
+export function Scene3D() {
+  const walls = useStore((s) => s.walls)
+  const items = useStore((s) => s.items)
+  const s = useStore((st) => st.settings)
+  const selection = useStore((st) => st.selection)
+  const controls = useRef<OrbitControlsImpl>(null)
+
+  const b = bounds(walls, items, s)
+  const cx = (b.minX + b.maxX) / 2
+  const cz = (b.minY + b.maxY) / 2
+  const span = Math.max(b.maxX - b.minX, b.maxY - b.minY, 200)
+  const initial = useRef(cameraPose(b))
+
+  useEffect(() => {
+    const onReset = () => {
+      const c = controls.current
+      if (!c) return
+      const pose = cameraPose(b)
+      c.target.set(...pose.target)
+      c.object.position.set(...pose.position)
+      c.update()
+    }
+    window.addEventListener('3d:reset', onReset)
+    return () => window.removeEventListener('3d:reset', onReset)
+  }, [b.minX, b.maxX, b.minY, b.maxY])
+
+  const i0 = initial.current
+  return (
+    <Canvas
+      shadows
+      camera={{ position: i0.position, fov: 50, near: 1, far: 10000 }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      onCreated={({ gl }) => {
+        // Neutral zachowuje odcienie materiałów (ACES wypłukiwał niebieski denim w szarość)
+        gl.toneMapping = THREE.NeutralToneMapping
+        gl.toneMappingExposure = 1
+      }}
+    >
+      <color attach="background" args={['#dfe3e8']} />
+      <hemisphereLight args={['#ffffff', '#b9b2a6', 1.4]} />
+      <ambientLight intensity={0.5} />
+      <directionalLight
+        position={[cx - 120, 700, cz + 380]}
+        intensity={1.1}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-span}
+        shadow-camera-right={span}
+        shadow-camera-top={span}
+        shadow-camera-bottom={-span}
+        shadow-camera-near={10}
+        shadow-camera-far={3000}
+        shadow-bias={-0.0004}
+      >
+        <object3D attach="target" position={[cx, 0, cz]} />
+      </directionalLight>
+      <pointLight position={[cx, s.ceilingHeight - 20, cz]} intensity={25000} distance={900} decay={2} />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0, cz]} receiveShadow material={MAT.floor()}>
+        <planeGeometry args={[span + 200, span + 200]} />
+      </mesh>
+
+      {walls.map((w) => (
+        <WallMesh key={w.id} wall={w} walls={walls} height={s.ceilingHeight} transparent={s.wallsTransparent} />
+      ))}
+      {items.map((i) => (
+        <ItemMesh key={i.id} item={i} items={items} s={s} selected={selection?.kind === 'item' && selection.id === i.id} />
+      ))}
+
+      <DevSceneHandle />
+      <OrbitControls ref={controls} makeDefault target={i0.target} maxPolarAngle={Math.PI / 2 - 0.02} />
+    </Canvas>
+  )
+}
