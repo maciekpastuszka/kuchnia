@@ -43,6 +43,8 @@ export const OVEN_COLUMN_WIDTH = 60
 /** Lodówka wolnostojąca – domyślne wymiary. */
 export const FRIDGE = { w: 60, d: 65, h: 200 }
 export const SHALLOW_DEPTH = 24
+/** Przeszkoda na ścianie (gniazdko, kranik) – domyślne wymiary i wysokość dolnej krawędzi od podłogi. */
+export const OBSTACLE = { w: 10, d: 5, h: 10, elevation: 50 }
 /** Wysokość najwyższej szuflady w zestawie 3 szuflad. */
 export const TOP_DRAWER_FRONT = 18.5
 
@@ -91,6 +93,15 @@ export const CATALOG: CatalogEntry[] = [
   { key: 'fridge', type: 'fridge', label: 'Lodówka wolnostojąca', hint: '60 × 65 cm, wysokość do ustawienia', defaults: { width: FRIDGE.w, height: FRIDGE.h } },
 ]
 
+/** Przeszkoda – dodawana ikoną w pasku bocznym, nie z listy mebli. */
+export const OBSTACLE_ENTRY: CatalogEntry = {
+  key: 'obstacle',
+  type: 'obstacle',
+  label: 'Przeszkoda',
+  hint: 'gniazdko, kranik, rura',
+  defaults: { width: OBSTACLE.w, depth: OBSTACLE.d, height: OBSTACLE.h, elevation: OBSTACLE.elevation },
+}
+
 export const TYPE_LABEL: Record<ItemType, string> = {
   base_drawers: 'Szafka szufladowa',
   base_door: 'Szafka z drzwiczkami',
@@ -109,6 +120,7 @@ export const TYPE_LABEL: Record<ItemType, string> = {
   vanity: 'Szafka podwieszana pod zlew',
   dishwasher: 'Zmywarka do zabudowy',
   fridge: 'Lodówka wolnostojąca',
+  obstacle: 'Przeszkoda',
 }
 
 export const isBaseCabinet = (t: ItemType) => t === 'base_drawers' || t === 'base_door' || t === 'base_corner' || t === 'base_blind_corner'
@@ -165,6 +177,8 @@ export function footprint(item: Item, settings: Settings): { w: number; d: numbe
       return { w: item.width, d: item.depth }
     case 'fridge':
       return { w: item.width, d: FRIDGE.d }
+    case 'obstacle':
+      return { w: item.width, d: item.depth }
   }
 }
 
@@ -244,6 +258,7 @@ export function carcassBox(item: Item, settings: Settings): { x0: number; x1: nu
     // płyta pod szafkami górnymi – zaznaczona pokazuje swoje wymiary tak jak korpus
     case 'wall_panel':
     case 'side_panel':
+    case 'obstacle':
       return { x0: -hw, x1: hw, z0: -hd, z1: hd }
     case 'column_upper':
     case 'vanity':
@@ -251,6 +266,12 @@ export function carcassBox(item: Item, settings: Settings): { x0: number; x1: nu
     default:
       return null
   }
+}
+
+/** Przeszkoda: od dolnej krawędzi do góry. */
+export function obstacleRange(item: Item): [number, number] {
+  const bottom = item.elevation ?? OBSTACLE.elevation
+  return [bottom, bottom + (item.height ?? OBSTACLE.h)]
 }
 
 /** Szafka podwieszana pod zlew: od (góra − wysokość) do góry `vanityTop`. */
@@ -273,14 +294,14 @@ export function columnUpperSpec(item: Item, s: Settings) {
       // nad dolnym korpusem słupka z piekarnikiem; front od góry wnęki – w linii dołu frontów szafek górnych
       return { carcass: [ovenNicheTop(s) + t, split] as R2, front: [ovenNicheTop(s), split - g / 2] as R2, mask: null, maskSideGap: true }
     case 'oven_high': {
-      // blenda pod sufitem taka sama jak nad płytkimi słupkami, w jednej linii
+      // blenda pod sufitem taka sama jak nad płytkimi słupkami, w jednej linii; front 2 mm od korpusu z dołu i z góry
       const top = shallowUpperTop(s)
-      return { carcass: [split, top] as R2, front: [split + g / 2, top - g] as R2, mask: [top, C] as R2, maskSideGap: false }
+      return { carcass: [split, top] as R2, front: [split + g / 2, top - g / 2] as R2, mask: [top, C] as R2, maskSideGap: false }
     }
     case 'shallow': {
       const top = shallowUpperTop(s)
-      // blenda bez szczelin bocznych – w rzędzie płytkich słupków czyta się jak jeden pas
-      return { carcass: [split, top] as R2, front: [split + g / 2, top - g] as R2, mask: [top, C] as R2, maskSideGap: false }
+      // blenda bez szczelin bocznych – w rzędzie płytkich słupków czyta się jak jeden pas; front 2 mm od korpusu z dołu i z góry
+      return { carcass: [split, top] as R2, front: [split + g / 2, top - g / 2] as R2, mask: [top, C] as R2, maskSideGap: false }
     }
   }
 }
@@ -299,6 +320,7 @@ export function columnCompanions(item: Item, s: Settings): Item[] {
     depth,
     upperOf,
     hinge: item.hinge,
+    doors: item.doors,
   })
   if (item.type === 'shallow_column') return [upper('shallow', item.width, item.depth)]
   if (item.type === 'oven_column') {
@@ -319,7 +341,7 @@ export function sidePanelCuts(item: Item, s: Settings): number[] {
 
 /**
  * Kawałki płyty bocznej [dół, góra] ze szczeliną frontów `frontGap` na każdym łączeniu – w tych samych liniach co fronty
- * płytkich słupków: przy podziale szczelina po połowie z obu stron, przy blendzie cała pod nią (blenda ma pełną wysokość).
+ * płytkich słupków: przy podziale szczelina po połowie z obu stron, pod blendą połowa szczeliny – jak front nad korpusem (blenda ma pełną wysokość).
  */
 export function sidePanelPieces(item: Item, s: Settings): [number, number][] {
   const cuts = sidePanelCuts(item, s)
@@ -328,7 +350,7 @@ export function sidePanelPieces(item: Item, s: Settings): [number, number][] {
   return cuts.slice(0, -1).map((a, i) => {
     const b = cuts[i + 1]
     const start = i === 0 || a === blendCut ? a : a + g / 2
-    const end = i === cuts.length - 2 ? b : b === blendCut ? b - g : b - g / 2
+    const end = i === cuts.length - 2 ? b : b - g / 2
     return [start, end]
   })
 }
@@ -346,8 +368,9 @@ export function carcassYRanges(item: Item, s: Settings): [number, number][] {
       return [[P, P + s.baseCarcassHeight]]
     case 'oven_column':
       return [[P, ovenNicheTop(s) + t]]
+    // płytki słupek: cała wysokość od podłogi razem z cokołem – liczy się, gdzie wypada linia frontów
     case 'shallow_column':
-      return [[P, shallowSplit(s)]]
+      return [[0, shallowSplit(s)]]
     case 'column_upper':
       return [columnUpperSpec(item, s).carcass]
     case 'vanity':
@@ -356,10 +379,11 @@ export function carcassYRanges(item: Item, s: Settings): [number, number][] {
       return [[wallCarcassBottom(s), upperTop]]
     case 'wall_panel':
       return [[s.wallCabinetBottom, wallCarcassBottom(s)]]
-    case 'side_panel': {
-      const cuts = sidePanelCuts(item, s)
-      return cuts.slice(0, -1).map((a, i) => [a, cuts[i + 1]] as [number, number])
-    }
+    case 'obstacle':
+      return [obstacleRange(item)]
+    // płyta boczna: rzeczywiste kawałki (bez szczelin na łączeniach), te same co wymiary frontów
+    case 'side_panel':
+      return sidePanelPieces(item, s)
     default:
       return []
   }
@@ -392,6 +416,8 @@ export function heightRange(item: Item, s: Settings): [number, number] {
       return [s.wallCabinetBottom, wallCarcassBottom(s)]
     case 'fridge':
       return [0, item.height ?? FRIDGE.h]
+    case 'obstacle':
+      return obstacleRange(item)
     default:
       return [0, baseTop(s)]
   }
@@ -400,6 +426,10 @@ export function heightRange(item: Item, s: Settings): [number, number] {
 /** Wymiary gabarytowe „szer × gł × wys” (AGD na blacie pomijamy – mają własne opisy). */
 export function dimsLabel(item: Item, s: Settings): string | null {
   if (isOnCounter(item.type)) return null
+  if (item.type === 'obstacle') {
+    const [y0, y1] = obstacleRange(item)
+    return `${fmt(item.width)} × ${fmt(y1 - y0)}, od ${fmt(y0)} cm`
+  }
   const { w, d } = footprint(item, s)
   const [y0, y1] = heightRange(item, s)
   return `${fmt(w)} × ${fmt(d)} × ${fmt(y1 - y0)}`

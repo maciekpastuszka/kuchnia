@@ -663,7 +663,7 @@ h4.sub {
 .front-dims {
   padding: 2px 7px;
   border-radius: 5px;
-  background: #1f6fff;
+  background: #16a34a;
   color: #fff;
   font: 700 11px/1.4 system-ui, sans-serif;
   white-space: nowrap;
@@ -673,8 +673,8 @@ h4.sub {
   margin: 0 0 8px;
   padding: 6px 8px;
   border-radius: 6px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: rgba(22, 163, 74, 0.14);
+  color: #16a34a;
 }
 .carcass-outline {
   fill: none;
@@ -685,7 +685,7 @@ h4.sub {
 }
 .front-dims.small {
   padding: 1px 5px;
-  background: rgba(31, 111, 255, 0.78);
+  background: rgba(22, 163, 74, 0.85);
   font-size: 9px;
   font-weight: 600;
 }
@@ -708,9 +708,20 @@ h4.sub {
   white-space: nowrap;
   pointer-events: none;
 }
+.dim3d-label.front {
+  background: #16a34a;
+}
 .shape-wall_panel {
   fill: none;
   stroke-dasharray: 6 2 1 2;
+}
+.shape-obstacle {
+  fill: rgba(249, 115, 22, 0.35);
+  stroke: #ea580c;
+}
+.obstacle-x {
+  stroke: #ea580c;
+  stroke-width: 1;
 }
 .shape-side_panel {
   fill: var(--cab-stroke);

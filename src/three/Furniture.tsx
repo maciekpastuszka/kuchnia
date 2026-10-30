@@ -2,7 +2,7 @@ import { Html } from '@react-three/drei'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
-import { FRIDGE, HOB, OVEN, OVEN_COLUMN_WIDTH, SINK, baseTop, counterTop, doorCount, drawerFronts, fmt, footprint, materialsFor, columnUpperSpec, baseFrontRange, itemSettings, ovenNicheTop, vanityRange, shallowSplit, sidePanelPieces, wallCarcassBottom } from '../catalog'
+import { FRIDGE, HOB, obstacleRange, OVEN, OVEN_COLUMN_WIDTH, SINK, baseTop, counterTop, doorCount, drawerFronts, fmt, footprint, materialsFor, columnUpperSpec, baseFrontRange, itemSettings, ovenNicheTop, vanityRange, shallowSplit, sidePanelPieces, wallCarcassBottom } from '../catalog'
 import { itemBox, toLocal } from '../geometry'
 import { useStore } from '../store'
 import type { Item, Settings } from '../types'
@@ -69,7 +69,7 @@ function Handle({ cx, cy, z, vertical, material }: { cx: number; cy: number; z: 
 
 /**
  * Front albo płyta w kolorze frontów (blenda, maskownica, płyta boczna). Kliknięcie w 3D zaznacza go:
- * niebieski obrys i wymiar „szer × wys” na środku, pełny wymiar w panelu właściwości.
+ * niebieski obrys i zielony wymiar „szer × wys” na środku, pełny wymiar w panelu właściwości.
  */
 function FrontPanel({ x, y, z, c }: { x: R; y: R; z: R; c: Ctx }) {
   const key = `${c.id}:f:${x[0].toFixed(1)}:${y[0].toFixed(1)}:${z[0].toFixed(1)}`
@@ -100,14 +100,14 @@ function FrontPanel({ x, y, z, c }: { x: R; y: R; z: R; c: Ctx }) {
       {selected &&
         (dx >= dz ? (
           <group>
-            <DimLine3D from={[x[0], y[0] + 3, z[1] + 0.6]} to={[x[1], y[0] + 3, z[1] + 0.6]} tick={[0, 1.5, 0]} value={w} />
-            <DimLine3D from={[x[0] + 3, y[0], z[1] + 0.6]} to={[x[0] + 3, y[1], z[1] + 0.6]} tick={[1.5, 0, 0]} value={h} />
+            <DimLine3D from={[x[0], y[0] + 3, z[1] + 0.6]} to={[x[1], y[0] + 3, z[1] + 0.6]} tick={[0, 1.5, 0]} value={w} front />
+            <DimLine3D from={[x[0] + 3, y[0], z[1] + 0.6]} to={[x[0] + 3, y[1], z[1] + 0.6]} tick={[1.5, 0, 0]} value={h} front />
           </group>
         ) : (
           // płyta boczna: szerokość to głębokość (wzdłuż z)
           <group>
-            <DimLine3D from={[x[1] + 0.6, y[0] + 3, z[0]]} to={[x[1] + 0.6, y[0] + 3, z[1]]} tick={[0, 1.5, 0]} value={w} />
-            <DimLine3D from={[x[1] + 0.6, y[0], z[1] - 3]} to={[x[1] + 0.6, y[1], z[1] - 3]} tick={[0, 0, 1.5]} value={h} />
+            <DimLine3D from={[x[1] + 0.6, y[0] + 3, z[0]]} to={[x[1] + 0.6, y[0] + 3, z[1]]} tick={[0, 1.5, 0]} value={w} front />
+            <DimLine3D from={[x[1] + 0.6, y[0], z[1] - 3]} to={[x[1] + 0.6, y[1], z[1] - 3]} tick={[0, 0, 1.5]} value={h} front />
           </group>
         ))}
     </group>
@@ -518,6 +518,23 @@ function Fridge({ item, c }: { item: Item; c: Ctx }) {
   )
 }
 
+/** Przeszkoda na ścianie (gniazdko, kranik): pełna bryła i jej półprzezroczysty obrys widoczny przez szafki. */
+function Obstacle({ item }: { item: Item }) {
+  const [y0, y1] = obstacleRange(item)
+  const w = item.width
+  const d = item.depth
+  return (
+    <group position={[0, (y0 + y1) / 2, 0]}>
+      <mesh material={MAT.obstacle()} castShadow>
+        <boxGeometry args={[w, y1 - y0, d]} />
+      </mesh>
+      <mesh material={MAT.obstacleGhost()} renderOrder={10}>
+        <boxGeometry args={[w, y1 - y0, d]} />
+      </mesh>
+    </group>
+  )
+}
+
 /** Szafka ze ślepym narożnikiem: stała blenda po stronie narożnika, obok jedne drzwiczki z uchwytem. */
 function BlindCorner({ item, c }: { item: Item; c: Ctx }) {
   const { s } = c
@@ -691,5 +708,7 @@ export function Furniture({ item, items, s }: { item: Item; items: Item[]; s: Se
       return <BlindCorner item={item} c={c} />
     case 'filler':
       return <Filler item={item} c={c} />
+    case 'obstacle':
+      return <Obstacle item={item} />
   }
 }

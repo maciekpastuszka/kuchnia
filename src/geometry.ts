@@ -251,7 +251,8 @@ export function snapPosition(item: Item, p: Pt, items: Item[], walls: Wall[], s:
         else consider(f.at - gap - max)
       }
       for (const o of others) {
-        if (isOnCounter(o.type)) continue
+        // do przeszkód przyciągają się tylko inne przeszkody – meble mają stać przy ścianach i sąsiadach
+        if (isOnCounter(o.type) || (o.type === 'obstacle' && item.type !== 'obstacle')) continue
         const b = itemBox(o, s)
         const [oMin, oMax] = axis === 'x' ? [b.minX, b.maxX] : [b.minY, b.maxY]
         consider(oMin - max)

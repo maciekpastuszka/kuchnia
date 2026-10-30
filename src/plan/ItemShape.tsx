@@ -101,6 +101,14 @@ export function ItemShape({ item, s, selected }: Props) {
           {L(hw, -hd, -hw, hd, 'tall-x')}
         </g>
       )
+    case 'obstacle':
+      return (
+        <g>
+          {outline}
+          {L(-hw, -hd, hw, hd, 'obstacle-x')}
+          {L(hw, -hd, -hw, hd, 'obstacle-x')}
+        </g>
+      )
   }
 }
 
@@ -157,5 +165,7 @@ export function itemLabel(item: Item): string {
       return `ZM ${item.width}`
     case 'fridge':
       return 'Lodówka'
+    case 'obstacle':
+      return 'Przeszkoda'
   }
 }

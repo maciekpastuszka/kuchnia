@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { CATALOG, baseWallGap, columnCompanions, counterTop, fmt, newItem } from '../catalog'
+import { CATALOG, OBSTACLE_ENTRY, baseWallGap, columnCompanions, counterTop, fmt, newItem } from '../catalog'
 import { exampleProject, newRectRoom, useStore } from '../store'
 import type { BoardMaterial, HandleColor, Project, Settings, StoneColor } from '../types'
 import { BOARD_LABEL, BOARD_SWATCH, HANDLE_LABEL, STONE_LABEL } from '../three/materials'
@@ -27,7 +27,7 @@ const PANELS: { key: Panel; icon: IconName; label: string }[] = [
   { key: 'settings', icon: 'settings', label: 'Ustawienia' },
 ]
 
-/** Pasek ikon po lewej; ikona otwiera swój panel, ponowne kliknięcie go zwija. */
+/** Pasek ikon po lewej; ikona otwiera swój panel, ponowne kliknięcie go zwija. Pod panelami – dodawanie przeszkody. */
 export function SideRail() {
   const [open, setOpen] = useState<Panel | null>('catalog')
   return (
@@ -45,6 +45,18 @@ export function SideRail() {
             <Icon name={p.icon} size={20} />
           </button>
         ))}
+        <button
+          className="rail-btn"
+          title="Dodaj przeszkodę (gniazdko, kranik) – domyślnie 10 × 10 cm, 50 cm od podłogi"
+          aria-label="Dodaj przeszkodę"
+          onClick={() => {
+            const c = roomCenter()
+            const st = useStore.getState()
+            st.addItem(newItem(OBSTACLE_ENTRY, c.x, c.y, st.settings))
+          }}
+        >
+          <Icon name="obstacle" size={20} />
+        </button>
       </nav>
       {open && <aside className="sidebar">{open === 'catalog' ? <CatalogPanel /> : <SettingsPanel />}</aside>}
     </div>

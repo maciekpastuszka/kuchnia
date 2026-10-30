@@ -35,9 +35,9 @@ type Drag =
   | { mode: 'wall'; id: string; start: Pt; applied: Pt; sx: number; sy: number; moved: boolean }
   | null
 
-/** Kolejność wybierania przy nakładaniu: AGD na blacie, szafki górne, szafki dolne, na końcu blat. */
+/** Kolejność wybierania przy nakładaniu: przeszkody, AGD na blacie, szafki górne, szafki dolne, na końcu blat. */
 const pickOrder = (i: Item) =>
-  isOnCounter(i.type) ? 0 : i.type === 'wall_cabinet' || i.type === 'column_upper' ? 1 : i.type === 'wall_panel' ? 1.5 : i.type === 'countertop' ? 3 : 2
+  i.type === 'obstacle' ? -1 : isOnCounter(i.type) ? 0 : i.type === 'wall_cabinet' || i.type === 'column_upper' ? 1 : i.type === 'wall_panel' ? 1.5 : i.type === 'countertop' ? 3 : 2
 const isWallLevel = (i: Item) => i.type === 'wall_cabinet' || i.type === 'wall_panel' || i.type === 'column_upper'
 
 export function PlanView() {
@@ -330,10 +330,12 @@ export function PlanView() {
   const selectedItem = selection?.kind === 'item' ? items.find((i) => i.id === selection.id) : undefined
   const selectedWall = selection?.kind === 'wall' ? walls.find((w) => w.id === selection.id) : undefined
   const layers = [
-    items.filter((i) => !isOnCounter(i.type) && i.type !== 'countertop' && !isWallLevel(i)),
+    items.filter((i) => !isOnCounter(i.type) && i.type !== 'countertop' && !isWallLevel(i) && i.type !== 'obstacle'),
     items.filter((i) => i.type === 'countertop'),
     items.filter((i) => isOnCounter(i.type)),
     items.filter(isWallLevel),
+    // przeszkody na wierzchu – widać je pod szafkami i blatem
+    items.filter((i) => i.type === 'obstacle'),
   ]
   const preview = tool === 'wall' ? previewPoint() : null
   const last = chain[chain.length - 1]

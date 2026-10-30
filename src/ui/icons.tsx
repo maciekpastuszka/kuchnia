@@ -4,6 +4,8 @@ const paths = {
   plus: 'M10 4v12M4 10h12',
   settings:
     'M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM10 2v2.2M10 15.8V18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M2 10h2.2M15.8 10H18M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6',
+  /** Gniazdko – przeszkoda na ścianie. */
+  obstacle: 'M4 4h12v12H4zM10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM8.6 10h0M11.4 10h0',
   pointer: 'M5 3l10 6.5-4.6 1.1L8.5 15z',
   wall: 'M3 16V4h4v8h10v4z',
   ruler: 'M2.5 13.5l11-11 4 4-11 11zM6 10l1.5 1.5M8.5 7.5l1.5 1.5M11 5l1.5 1.5',

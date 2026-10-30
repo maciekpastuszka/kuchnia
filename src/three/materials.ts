@@ -109,5 +109,8 @@ export const MAT = {
   fridge: () => cached('fridge', () => new THREE.MeshStandardMaterial({ color: '#b9bdc1', metalness: 0.6, roughness: 0.35 })),
   drawerBox: () => cached('drawerBox', () => new THREE.MeshStandardMaterial({ color: '#d4d6d9', metalness: 0.3, roughness: 0.5 })),
   hdf: () => cached('hdf', () => new THREE.MeshStandardMaterial({ color: '#e9e7e2', roughness: 0.9 })),
+  obstacle: () => cached('obstacle', () => new THREE.MeshStandardMaterial({ color: '#f97316', roughness: 0.6 })),
+  /** Przeszkoda widziana przez meble – półprzezroczysta, bez testu głębi. */
+  obstacleGhost: () => cached('obstacleGhost', () => new THREE.MeshBasicMaterial({ color: '#f97316', transparent: true, opacity: 0.6, depthTest: false, depthWrite: false })),
   selection: () => cached('selection', () => new THREE.MeshBasicMaterial({ color: '#1f6fff', wireframe: true })),
 }

@@ -12,6 +12,8 @@ import {
   doorCount,
   drawerFronts,
   FRIDGE,
+  OBSTACLE,
+  obstacleRange,
   fmt,
   footprint,
   hasWidth,
@@ -88,9 +90,9 @@ function ItemProps({ item }: { item: Item }) {
         <NumberField
           label={item.type === 'base_corner' ? 'Wymiar ramion' : 'Szerokość'}
           value={item.width}
-          // blenda bywa wąska (np. 2 cm przy ścianie), reszta mebli od 10 cm
-          min={item.type === 'filler' ? 0.5 : 10}
-          step={item.type === 'filler' ? 0.1 : 1}
+          // blenda bywa wąska (np. 2 cm przy ścianie), przeszkoda (gniazdko, rurka) jeszcze węższa, reszta mebli od 10 cm
+          min={item.type === 'filler' ? 0.5 : item.type === 'obstacle' ? 0.5 : 10}
+          step={item.type === 'filler' || item.type === 'obstacle' ? 0.1 : 1}
           options={
             item.type === 'shallow_column'
               ? [30, 35, 40, 45, 50, 60]
@@ -100,7 +102,7 @@ function ItemProps({ item }: { item: Item }) {
                   ? [100, 105, 110, 120]
                   : item.type === 'filler'
                     ? [2, 3, 5, 7, 10]
-                : item.type === 'countertop' || item.type === 'fridge'
+                : item.type === 'countertop' || item.type === 'fridge' || item.type === 'obstacle'
                   ? undefined
                   : BASE_WIDTHS
           }
@@ -151,10 +153,17 @@ function ItemProps({ item }: { item: Item }) {
       {(item.type === 'countertop' || item.type === 'shallow_column') && (
         <NumberField label={item.type === 'shallow_column' ? 'Głębokość z frontem' : 'Głębokość'} value={item.depth} min={10} onChange={(v) => change(item.id, { depth: v })} />
       )}
+      {item.type === 'obstacle' && (
+        <>
+          <NumberField label="Wysokość" value={item.height ?? OBSTACLE.h} min={0.5} step={0.1} onChange={(v) => change(item.id, { height: v })} />
+          <NumberField label="Od podłogi (dolna krawędź)" value={item.elevation ?? OBSTACLE.elevation} min={0} step={0.1} onChange={(v) => change(item.id, { elevation: v })} />
+          <NumberField label="Wystaje ze ściany" value={item.depth} min={0.1} step={0.1} onChange={(v) => change(item.id, { depth: v })} />
+        </>
+      )}
       {item.type === 'fridge' && (
         <NumberField label="Wysokość" value={item.height ?? FRIDGE.h} min={50} onChange={(v) => change(item.id, { height: v })} />
       )}
-      {(item.type === 'base_door' || item.type === 'shallow_column' || item.type === 'wall_cabinet') && (
+      {(item.type === 'base_door' || item.type === 'shallow_column' || item.type === 'wall_cabinet' || item.type === 'column_upper') && (
         <label className="field">
           <span>Drzwi</span>
           <select value={doorCount(item)} onChange={(e) => change(item.id, { doors: Number(e.target.value) as 1 | 2 })}>
@@ -163,7 +172,7 @@ function ItemProps({ item }: { item: Item }) {
           </select>
         </label>
       )}
-      {((item.type === 'base_door' || item.type === 'shallow_column' || item.type === 'wall_cabinet') && doorCount(item) === 1) ||
+      {((item.type === 'base_door' || item.type === 'shallow_column' || item.type === 'wall_cabinet' || item.type === 'column_upper') && doorCount(item) === 1) ||
       item.type === 'base_blind_corner' ||
       (item.type === 'oven_column' && item.underOvenDoor) ? (
         <label className="field">
@@ -356,6 +365,7 @@ function specs(item: Item, settings: Settings): string[] {
       const cd = item.depth - s.frontThickness - s.tipOnGap
       const split = shallowSplit(s)
       return [
+        `Całość od podłogi ${fmt(split)} cm (z cokołem), szafka górna od ${fmt(split)} cm`,
         `Korpus ${fmt(inner)} × ${fmt(split - P)} × ${fmt(cd)} cm`,
         `Front TIP-ON ${fmt(s.shallowLowerFront)} cm (od ${fmt(s.shallowFloorGap)} do ${fmt(s.shallowFloorGap + s.shallowLowerFront)} cm nad podłogą), ${fmt(s.tipOnGap * 10)} mm luzu za frontem na wciśnięcie`,
         'Szafka górna z blendą to osobny element',
@@ -425,6 +435,13 @@ function specs(item: Item, settings: Settings): string[] {
         `Wnęka ${fmt(item.width)} × ${fmt(H)} cm (pod blatem ${fmt(s.plinthHeight + H)} cm) – zmywarka XXL 86,5–92 cm`,
         `Front ${fmt(item.width - 2 * sg)} × ${fmt(H - s.frontGap)} cm`,
       ]
+    case 'obstacle': {
+      const [y0, y1] = obstacleRange(item)
+      return [
+        `${fmt(item.width)} × ${fmt(y1 - y0)} cm, wystaje ${fmt(item.depth)} cm ze ściany`,
+        `Od ${fmt(y0)} do ${fmt(y1)} cm nad podłogą`,
+      ]
+    }
     case 'fridge':
       return [`Wolnostojąca ${fmt(item.width)} × ${FRIDGE.d} × ${fmt(item.height ?? FRIDGE.h)} cm`, 'Zostaw ok. 5 cm z boku przy ścianie na otwieranie drzwi']
   }
@@ -542,6 +559,7 @@ function Help() {
         </li>
         <li>Narysowana linia to lico ściany od strony kuchni.</li>
         <li>Meble dodasz z panelu „Dodaj meble” (ikona po lewej), a potem przeciągniesz je na rzucie. Przyciągają się do ścian (z luzem {fmt(gap)} cm za szafkami dolnymi) i do siebie nawzajem.</li>
+        <li>Gniazdka, kraniki i rury dodasz ikoną gniazdka pod ustawieniami jako przeszkodę. Wymiary i wysokość od podłogi ustawisz po zaznaczeniu, a kolizję z meblami zobaczysz w uwagach.</li>
         <li>
           <kbd>R</kbd> / <kbd>Shift+R</kbd> – obrót o 90°, <kbd>Del</kbd> – usuń, <kbd>Ctrl+D</kbd> – duplikuj, strzałki – przesuń o 1 cm (z Shift o 10 cm).
         </li>

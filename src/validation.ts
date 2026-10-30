@@ -1,5 +1,5 @@
-import { HOB, SINK, counterTop, isBaseCabinet } from './catalog'
-import { boxContains, boxInside, itemBox } from './geometry'
+import { HOB, SINK, TYPE_LABEL, counterTop, fmt, heightRange, isBaseCabinet } from './catalog'
+import { boxContains, boxInside, boxesOverlap, itemBox } from './geometry'
 import type { Item, Settings } from './types'
 
 /** Uwagi montażowe dla zaznaczonego mebla. */
@@ -26,6 +26,16 @@ export function itemWarnings(item: Item, items: Item[], s: Settings): string[] {
         const bowlBottom = counterTop(s) - s.counterThickness - SINK.bowlH
         out.push(`Szuflada zlewowa: skrzynka z wycięciem U na syfon, z tyłu niższa – dno komory na ${bowlBottom} cm od podłogi.`)
       }
+    }
+  }
+
+  if (item.type === 'obstacle') {
+    // kolizja w rzucie i w wysokości – np. gniazdko za szafką dolną, kranik w luzie za korpusem
+    const [y0, y1] = heightRange(item, s)
+    for (const o of items) {
+      if (o.id === item.id || o.type === 'obstacle' || !boxesOverlap(box, itemBox(o, s))) continue
+      const [o0, o1] = heightRange(o, s)
+      if (o0 < y1 - 0.01 && o1 > y0 + 0.01) out.push(`Koliduje z: ${TYPE_LABEL[o.type]}${o.width ? ` ${fmt(o.width)}` : ''} (od ${fmt(o0)} do ${fmt(o1)} cm).`)
     }
   }
 

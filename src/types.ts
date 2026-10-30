@@ -41,6 +41,7 @@ export type ItemType =
   | 'vanity'
   | 'dishwasher'
   | 'fridge'
+  | 'obstacle'
 
 /** Obrót co 90°: 0 = front w dół rzutu (plecy przy górnej ścianie), 1 = front w lewo, 2 = w górę, 3 = w prawo. */
 export type Rot = 0 | 1 | 2 | 3
@@ -60,8 +61,10 @@ export interface Item {
   doors?: 1 | 2
   /** Szafka dolna: własna głębokość korpusu (np. pod płytszym blatem); brak = z ustawień. */
   carcassDepth?: number
-  /** Wysokość lodówki wolnostojącej / szafki podwieszanej. */
+  /** Wysokość lodówki wolnostojącej / szafki podwieszanej / przeszkody. */
   height?: number
+  /** Przeszkoda (gniazdko, kranik): dolna krawędź od podłogi. */
+  elevation?: number
   /** Liczba szuflad (szafka szufladowa, słupek z piekarnikiem). */
   drawers?: 1 | 2 | 3
   /** Ślepy narożnik: po której stronie (patrząc na front) jest blenda zakrywająca martwą część. */

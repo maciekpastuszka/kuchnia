@@ -98,6 +98,7 @@ function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: 
   const dims = s.showDims && !selected ? dimsLabel(item, s) : null
   const cb = selected ? carcassBox(item, s) : null
   const carcassYs = cb ? carcassYRanges(item, s) : []
+  const frontBoard = item.type === 'side_panel' || item.type === 'wall_panel'
   const tagRef = useDimsFontSize([item.x, (y0 + y1) / 2, item.y])
   const select = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 4) return
@@ -127,12 +128,13 @@ function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: 
             </mesh>
           )}
       {cb && carcassYs.length > 0 && (
+        // płyta boczna i płyta pod szafkami górnymi są w kolorze frontów – ich wymiary zielone jak fronty
         <group>
           {/* szerokość po górnej przedniej krawędzi korpusu, głębokość po prawym boku, wysokość przy lewej krawędzi */}
-          <DimLine3D from={[cb.x0, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.x1 - cb.x0} />
-          <DimLine3D from={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z0]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.z1 - cb.z0} />
+          <DimLine3D from={[cb.x0, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.x1 - cb.x0} front={frontBoard} />
+          <DimLine3D from={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z0]} to={[cb.x1, carcassYs[carcassYs.length - 1][1] + 2, cb.z1]} tick={[0, 2, 0]} value={cb.z1 - cb.z0} front={frontBoard} />
           {carcassYs.map(([a, b], i) => (
-            <DimLine3D key={i} from={[cb.x0 - 3, a, cb.z1]} to={[cb.x0 - 3, b, cb.z1]} tick={[2, 0, 0]} value={b - a} />
+            <DimLine3D key={i} from={[cb.x0 - 3, a, cb.z1]} to={[cb.x0 - 3, b, cb.z1]} tick={[2, 0, 0]} value={b - a} front={frontBoard} />
           ))}
         </group>
       )}
