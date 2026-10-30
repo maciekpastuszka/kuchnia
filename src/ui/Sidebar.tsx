@@ -216,7 +216,7 @@ function SettingsPanel() {
       </label>
       <label className="check">
         <input type="checkbox" checked={s.showDims} onChange={(e) => set({ showDims: e.target.checked })} />
-        Pokaż wymiary mebli (szer × gł × wys)
+        Pokaż wymiary mebli na rzucie (szer × gł × wys)
       </label>
     </section>
   )

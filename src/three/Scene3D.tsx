@@ -1,13 +1,13 @@
-import { Html, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { carcassBox, carcassYRanges, dimsLabel, footprint, heightRange } from '../catalog'
+import { carcassBox, carcassYRanges, footprint, heightRange } from '../catalog'
 import { itemBox, wallLength, wallOutward, wallPieces, wallWindows } from '../geometry'
 import { useStore } from '../store'
 import type { Item, Settings, Wall } from '../types'
-import { DimLine3D, Z_LABELS } from './DimLine3D'
+import { DimLine3D } from './DimLine3D'
 import { Furniture } from './Furniture'
 import { MAT } from './materials'
 
@@ -94,12 +94,10 @@ function Window3D({ wall, from, to, sill, height }: { wall: Wall; from: number; 
 function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: Settings; selected: boolean }) {
   const { w, d } = footprint(item, s)
   const [y0, y1] = heightRange(item, s)
-  // po zaznaczeniu zamiast gabarytu całości pokazujemy korpus (fronty mają własne etykiety)
-  const dims = s.showDims && !selected ? dimsLabel(item, s) : null
+  // bez etykiet gabarytów w 3D (są na rzucie); po zaznaczeniu wymiary korpusu, fronty mają własne etykiety
   const cb = selected ? carcassBox(item, s) : null
   const carcassYs = cb ? carcassYRanges(item, s) : []
   const frontBoard = item.type === 'side_panel' || item.type === 'wall_panel'
-  const tagRef = useDimsFontSize([item.x, (y0 + y1) / 2, item.y])
   const select = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 4) return
     e.stopPropagation()
@@ -108,14 +106,6 @@ function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: 
   return (
     <group position={[item.x, 0, item.y]} rotation={[0, (-item.rot * Math.PI) / 2, 0]} onClick={select}>
       <Furniture item={item} items={items} s={s} />
-      {dims && (
-        // blat: etykieta na przedniej krawędzi, reszta: środek frontu
-        <Html position={[0, item.type === 'countertop' ? y1 + 1 : (y0 + y1) / 2, d / 2 + 1]} center occlude zIndexRange={Z_LABELS}>
-          <div ref={tagRef} className="dims-3d">
-            {dims}
-          </div>
-        </Html>
-      )}
       {selected && cb && carcassYs.length > 0
         ? carcassYs.map(([a, b], i) => (
             <mesh key={i} position={[(cb.x0 + cb.x1) / 2, (a + b) / 2, (cb.z0 + cb.z1) / 2]} material={MAT.selection()} raycast={() => null}>
@@ -140,22 +130,6 @@ function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: 
       )}
     </group>
   )
-}
-
-const tmp = new THREE.Vector3()
-
-/**
- * Czcionka etykiety wymiarów maleje z odległością kamery, w granicach 7–10 px.
- * Liczone tutaj, bo dzieci <Html> renderują się poza kontekstem Canvas (bez useFrame).
- */
-function useDimsFontSize(at: [number, number, number]) {
-  const ref = useRef<HTMLDivElement>(null)
-  useFrame(({ camera }) => {
-    if (!ref.current) return
-    const dist = camera.position.distanceTo(tmp.set(...at))
-    ref.current.style.fontSize = `${Math.max(7, Math.min(10, 3000 / dist)).toFixed(1)}px`
-  })
-  return ref
 }
 
 /** Tylko w trybie deweloperskim: dostęp do sceny z konsoli (kontrola wymiarów narysowanych płyt). */

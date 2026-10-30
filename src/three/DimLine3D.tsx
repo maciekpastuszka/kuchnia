@@ -6,10 +6,9 @@ type V3 = [number, number, number]
 const RED = '#e11d48'
 /** Fronty, blendy i płyty boczne – zielone, żeby odróżniały się od wymiarów korpusu. */
 const GREEN = '#16a34a'
-/** Kolejność warstw etykiet HTML w 3D: wymiary zaznaczenia zawsze nad etykietami frontów i gabarytów. */
+/** Kolejność warstw etykiet HTML w 3D: wymiary zaznaczenia zawsze nad etykietami frontów. */
 export const Z_DIMS: [number, number] = [2_000_000_000, 1_999_000_000]
 export const Z_FRONTS: [number, number] = [1_000_000, 500_000]
-export const Z_LABELS: [number, number] = [100_000, 0]
 /** Linie wymiarowe rysowane na końcu, nad całą sceną. */
 const ON_TOP = 10_000
 

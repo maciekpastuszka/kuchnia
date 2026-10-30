@@ -606,16 +606,6 @@ kbd {
 .shape-dishwasher {
   fill: light-dark(#e8ecef, #323842);
 }
-.dims-3d {
-  padding: 0.1em 0.5em;
-  border-radius: 0.4em;
-  background: rgba(255, 255, 255, 0.88);
-  color: #1b1d21;
-  font: 600 9px/1.35 system-ui, sans-serif;
-  white-space: nowrap;
-  pointer-events: none;
-  user-select: none;
-}
 .item-dims {
   font-weight: 500;
   fill: var(--muted);
