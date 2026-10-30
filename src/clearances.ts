@@ -1,4 +1,4 @@
-import { HOB, SINK, isBaseCabinet } from './catalog'
+import { HOB, SINK, isBaseCabinet, itemSettings } from './catalog'
 import { boxContains, itemBox, toLocal, toWorld, type Box, type Pt } from './geometry'
 import type { Item, Settings } from './types'
 
@@ -60,10 +60,11 @@ export function counterItemClearances(item: Item, items: Item[], s: Settings): C
   const cab = items.find((o) => isBaseCabinet(o.type) && o.type !== 'base_corner' && boxContains(itemBox(o, s), center))
   let cabinetInner: Box | null = null
   if (cab) {
+    const cs = itemSettings(cab, s)
     const hw = cab.width / 2
-    const hd = (s.baseCarcassDepth + s.frontThickness) / 2
-    const t = s.boardThickness
-    cabinetInner = localBox(cab, -hw + t, hw - t, -hd + 0.3, -hd + s.baseCarcassDepth)
+    const hd = (cs.baseCarcassDepth + cs.frontThickness) / 2
+    const t = cs.boardThickness
+    cabinetInner = localBox(cab, -hw + t, hw - t, -hd + 0.3, -hd + cs.baseCarcassDepth)
   }
   const counterItem = items.find((o) => o.type === 'countertop' && boxContains(itemBox(o, s), center))
   const counter = counterItem ? itemBox(counterItem, s) : null

@@ -10,6 +10,7 @@ import {
   sidePanelPieces,
   vanityRange,
   wallCarcassBottom,
+  baseFrontRange,
 } from './catalog'
 import { toWorld } from './geometry'
 import type { Item, Settings } from './types'
@@ -30,7 +31,6 @@ export function itemFrontParts(item: Item, s: Settings): Part[] {
   const t = s.boardThickness
   const g = s.frontGap
   const sg = s.frontSideGap
-  const P = s.plinthHeight
   const H = s.baseCarcassHeight
   const C = s.ceilingHeight
   const hw = w / 2
@@ -43,9 +43,9 @@ export function itemFrontParts(item: Item, s: Settings): Part[] {
         ]
   switch (item.type) {
     case 'base_drawers':
-      return drawerFronts(item.drawers ?? 3, P, H, s).map((f, i) => ({ name: `szuflada ${i + 1}`, x: [-hw + sg, hw - sg], y: [f.y, f.y + f.h] }))
+      return drawerFronts(item.drawers ?? 3, baseFrontRange(s)[0], H, s).map((f, i) => ({ name: `szuflada ${i + 1}`, x: [-hw + sg, hw - sg], y: [f.y, f.y + f.h] }))
     case 'base_door':
-      return leaves(-hw, hw, doorCount(item)).map((x, i) => ({ name: `drzwi ${i + 1}`, x, y: [P, P + H - g] }))
+      return leaves(-hw, hw, doorCount(item)).map((x, i) => ({ name: `drzwi ${i + 1}`, x, y: baseFrontRange(s) }))
     case 'base_blind_corner': {
       const bw = item.blindWidth ?? 60
       const cut = item.blindSide === 'R' ? hw - bw : -hw + bw
@@ -60,21 +60,21 @@ export function itemFrontParts(item: Item, s: Settings): Part[] {
               [cut + sg, hw - sg],
             ]
       return [
-        { name: 'blenda', x: blind, y: [P, P + H - g] },
-        { name: 'drzwi', x: door, y: [P, P + H - g] },
+        { name: 'blenda', x: blind, y: baseFrontRange(s) },
+        { name: 'drzwi', x: door, y: baseFrontRange(s) },
       ]
     }
     case 'dishwasher':
     case 'filler':
-      return [{ name: item.type === 'filler' ? 'blenda' : 'front', x: [-hw + sg, hw - sg], y: [P, P + H - g] }]
+      return [{ name: item.type === 'filler' ? 'blenda' : 'front', x: [-hw + sg, hw - sg], y: baseFrontRange(s) }]
     case 'oven_column': {
       const xL = -hw + (item.panelLeft ? t : 0)
       const xR = xL + OVEN_COLUMN_WIDTH
       const bTop = baseTop(s)
       const fx: [number, number] = [xL + sg, xR - sg]
       const under: Part[] = item.underOvenDoor
-        ? [{ name: 'drzwi pod piekarnikiem', x: fx, y: [P, bTop - g] }]
-        : drawerFronts(item.drawers ?? 3, P, H, s).map((f, i) => ({ name: `szuflada ${i + 1}`, x: fx, y: [f.y, f.y + f.h] }))
+        ? [{ name: 'drzwi pod piekarnikiem', x: fx, y: baseFrontRange(s) }]
+        : drawerFronts(item.drawers ?? 3, baseFrontRange(s)[0], H, s).map((f, i) => ({ name: `szuflada ${i + 1}`, x: fx, y: [f.y, f.y + f.h] }))
       return [...under, { name: 'piekarnik', x: [-OVEN.w / 2 + (xL + xR) / 2, OVEN.w / 2 + (xL + xR) / 2], y: [bTop, bTop + OVEN.h] }]
     }
     case 'shallow_column': {

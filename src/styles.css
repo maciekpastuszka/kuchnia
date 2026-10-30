@@ -403,6 +403,9 @@ kbd {
   user-select: none;
   touch-action: none;
 }
+.plan.tool-select .wall {
+  cursor: move;
+}
 .plan.tool-wall,
 .plan.tool-measure {
   cursor: crosshair;

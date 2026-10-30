@@ -7,88 +7,70 @@
       "x2": 430.3,
       "y2": 0,
       "thickness": 12,
-      "side": 1
+      "side": 1,
+      "windows": [
+        {
+          "id": "okno-zlew",
+          "offset": 102,
+          "width": 174.6,
+          "sill": 97.7,
+          "height": 138.8
+        }
+      ]
     },
     {
       "id": "sr8s7y3",
       "x1": 430.3,
       "y1": 0,
       "x2": 430.3,
-      "y2": 224.5,
+      "y2": 225,
       "thickness": 12,
       "side": 1
     },
     {
-      "id": "hsnq6ip",
+      "id": "j6aixb3",
       "x1": 430.3,
-      "y1": 224.5,
-      "x2": 730.3,
-      "y2": 224.5,
+      "y1": 225,
+      "x2": 593.6,
+      "y2": 225,
       "thickness": 12,
-      "side": 1
-    },
-    {
-      "id": "6jdlk83",
-      "x1": 442.3,
-      "y1": 92.5,
-      "x2": 627.3,
-      "y2": 92.5,
-      "thickness": 12,
-      "side": 1
-    },
-    {
-      "id": "g7cexr5",
-      "x1": 627.3,
-      "y1": 92.5,
-      "x2": 627.3,
-      "y2": 212.5,
-      "thickness": 12,
-      "side": 1
-    },
-    {
-      "id": "kha964f",
-      "x1": 627.3,
-      "y1": 212.5,
-      "x2": 442.3,
-      "y2": 212.5,
-      "thickness": 12,
-      "side": 1
-    },
-    {
-      "id": "wxwc4k6",
-      "x1": 442.3,
-      "y1": 212.5,
-      "x2": 442.3,
-      "y2": 92.5,
-      "thickness": 12,
-      "side": 1
+      "side": 1,
+      "windows": [
+        {
+          "id": "66ewn0p",
+          "offset": 36.5,
+          "width": 69.6,
+          "sill": 0,
+          "height": 203
+        }
+      ]
     }
   ],
   "items": [
     {
       "id": "pqjoqey",
       "type": "filler",
-      "x": 368.8,
-      "y": 31.6,
+      "x": 369.5,
+      "y": 31.9,
       "rot": 0,
-      "width": 7,
+      "width": 4,
       "depth": 0
     },
     {
       "id": "2op871s",
       "type": "base_drawers",
-      "x": 320.3,
-      "y": 31.6,
+      "x": 325,
+      "y": 31.9,
       "rot": 0,
-      "width": 90,
+      "width": 85,
       "depth": 0,
       "drawers": 3
     },
     {
       "id": "mhnw9v6",
       "type": "dishwasher",
-      "x": 245.30000000000004,
-      "y": 31.1,
+      "x": 252.5,
+      "y": 31.9,
       "rot": 0,
       "width": 60,
       "depth": 0
@@ -96,27 +78,27 @@
     {
       "id": "6eme8bp",
       "type": "base_drawers",
-      "x": 175.3,
-      "y": 32.1,
+      "x": 177.5,
+      "y": 31.900000000000002,
       "rot": 0,
-      "width": 80,
+      "width": 90,
       "depth": 0,
       "drawers": 1
     },
     {
       "id": "nrpv15u",
       "type": "base_door",
-      "x": 105.30000000000001,
-      "y": 32.1,
+      "x": 103.80000000000001,
+      "y": 31.899999999999995,
       "rot": 0,
-      "width": 60,
+      "width": 57,
       "depth": 0,
       "hinge": "L"
     },
     {
       "id": "dwqjsri",
       "type": "fridge",
-      "x": 37.65,
+      "x": 45.30000000000001,
       "y": 32.5,
       "rot": 0,
       "width": 60,
@@ -135,7 +117,7 @@
     {
       "id": "4ocka9b",
       "type": "hob",
-      "x": 320.3,
+      "x": 325,
       "y": 31.5,
       "rot": 0,
       "width": 0,
@@ -144,8 +126,8 @@
     {
       "id": "i1x4kyy",
       "type": "sink",
-      "x": 175.3,
-      "y": 30,
+      "x": 177.5,
+      "y": 33.23,
       "rot": 0,
       "width": 0,
       "depth": 0
@@ -153,39 +135,40 @@
     {
       "id": "ite7fbv",
       "type": "side_panel",
-      "x": 401.3,
+      "x": 400.9,
       "y": 187.3,
       "rot": 1,
       "width": 1.8,
-      "depth": 58
+      "depth": 58.8
     },
     {
       "id": "0la5vcz",
       "type": "side_panel",
-      "x": 401.3,
+      "x": 400.9,
       "y": 249.1,
       "rot": 1,
       "width": 1.8,
-      "depth": 58,
+      "depth": 58.8,
       "split": true,
       "topBlend": true
     },
     {
       "id": "70a3mif",
       "type": "base_blind_corner",
-      "x": 398.7,
-      "y": 49.2,
+      "x": 399.4,
+      "y": 48.1,
       "rot": 1,
-      "width": 88,
+      "width": 90.2,
       "depth": 0,
       "blindSide": "L",
-      "blindWidth": 57.8,
-      "hinge": "L"
+      "blindWidth": 59.13,
+      "hinge": "L",
+      "carcassDepth": 54
     },
     {
       "id": "p3ybgvl",
       "type": "oven_column",
-      "x": 398.70000000000005,
+      "x": 400.55,
       "y": 218.2,
       "rot": 1,
       "width": 60,
@@ -196,50 +179,51 @@
     {
       "id": "ifw1hfo",
       "type": "column_upper",
-      "x": 398.70000000000005,
+      "x": 400.55,
       "y": 218.2,
       "rot": 1,
       "width": 60,
-      "depth": 52.8,
+      "depth": 58.1,
       "upperOf": "oven_low",
       "hinge": "R"
     },
     {
       "id": "d06axnf",
       "type": "column_upper",
-      "x": 398.70000000000005,
+      "x": 400.55,
       "y": 218.2,
       "rot": 1,
       "width": 60,
-      "depth": 52.8,
+      "depth": 58.1,
       "upperOf": "oven_high",
       "hinge": "R"
     },
     {
       "id": "o28oapj",
       "type": "base_drawers",
-      "x": 398.7,
+      "x": 399.4,
       "y": 139.8,
       "rot": 1,
       "width": 93.2,
-      "depth": 0
+      "depth": 0,
+      "carcassDepth": 54
     },
     {
       "id": "z56e4pc",
       "type": "countertop",
-      "x": 400.3,
-      "y": 123.2,
+      "x": 399.8,
+      "y": 124.7,
       "rot": 1,
-      "width": 126.4,
-      "depth": 60
+      "width": 123.4,
+      "depth": 61
     },
     {
       "id": "zlfn64e",
       "type": "wall_cabinet",
       "x": 412.8,
-      "y": 46.6,
+      "y": 31.065,
       "rot": 1,
-      "width": 93.2,
+      "width": 62.13,
       "depth": 0,
       "doors": 2
     },
@@ -247,9 +231,19 @@
       "id": "oto3kf0",
       "type": "wall_cabinet",
       "x": 412.8,
-      "y": 139.8,
+      "y": 93.195,
       "rot": 1,
-      "width": 93.2,
+      "width": 62.13,
+      "depth": 0,
+      "doors": 2
+    },
+    {
+      "id": "r9cdqtu",
+      "type": "wall_cabinet",
+      "x": 412.8,
+      "y": 155.33,
+      "rot": 1,
+      "width": 62.14,
       "depth": 0,
       "doors": 2
     },
@@ -265,116 +259,65 @@
     {
       "id": "lci4pmv",
       "type": "shallow_column",
-      "x": 445.3,
-      "y": 237.25,
+      "x": 452.3,
+      "y": 238,
       "rot": 0,
-      "width": 30,
-      "depth": 25.5,
+      "width": 35,
+      "depth": 24,
       "hinge": "L"
     },
     {
       "id": "3mvs1dm",
       "type": "column_upper",
-      "x": 445.3,
-      "y": 237.25,
+      "x": 452.3,
+      "y": 238,
       "rot": 0,
-      "width": 30,
-      "depth": 25.5,
+      "width": 35,
+      "depth": 24,
       "upperOf": "shallow",
       "hinge": "L"
     },
     {
       "id": "7bbezb8",
       "type": "shallow_column",
-      "x": 490.3,
-      "y": 237.25,
+      "x": 501.8,
+      "y": 238,
       "rot": 0,
-      "width": 60,
-      "depth": 25.5,
+      "width": 64,
+      "depth": 24,
       "hinge": "L"
     },
     {
       "id": "7wg37cy",
       "type": "column_upper",
-      "x": 490.3,
-      "y": 237.25,
+      "x": 501.8,
+      "y": 238,
       "rot": 0,
-      "width": 60,
-      "depth": 25.5,
+      "width": 64,
+      "depth": 24,
       "upperOf": "shallow",
       "hinge": "L"
     },
     {
       "id": "uf63z2w",
       "type": "shallow_column",
-      "x": 535.3,
-      "y": 237.25,
+      "x": 551.3,
+      "y": 238,
       "rot": 0,
-      "width": 30,
-      "depth": 25.5,
+      "width": 35,
+      "depth": 24,
       "hinge": "L"
     },
     {
       "id": "asecfny",
       "type": "column_upper",
-      "x": 535.3,
-      "y": 237.25,
+      "x": 551.3,
+      "y": 238,
       "rot": 0,
-      "width": 30,
-      "depth": 25.5,
+      "width": 35,
+      "depth": 24,
       "upperOf": "shallow",
       "hinge": "L"
-    },
-    {
-      "id": "rvru96i",
-      "type": "vanity",
-      "x": 602.9,
-      "y": 133.5,
-      "rot": 1,
-      "width": 82,
-      "depth": 48.8,
-      "drawers": 2,
-      "height": 60
-    },
-    {
-      "id": "c16yqua",
-      "type": "vanity",
-      "x": 508.3,
-      "y": 195.6,
-      "rot": 2,
-      "width": 132,
-      "depth": 33.8,
-      "drawers": 1,
-      "height": 30
-    },
-    {
-      "id": "kiocl2f",
-      "type": "countertop",
-      "x": 509.8,
-      "y": 195,
-      "rot": 2,
-      "width": 135,
-      "depth": 35
-    },
-    {
-      "id": "4lt9oxj",
-      "type": "countertop",
-      "x": 602.3,
-      "y": 152.5,
-      "rot": 3,
-      "width": 120,
-      "depth": 50
-    },
-    {
-      "id": "5o02azl",
-      "type": "vanity",
-      "x": 602.9,
-      "y": 193,
-      "rot": 1,
-      "width": 37,
-      "depth": 48.8,
-      "height": 60,
-      "drawers": 2
     }
   ],
   "settings": {
@@ -384,14 +327,16 @@
     "baseCarcassDepth": 56,
     "counterThickness": 2,
     "counterDepth": 63,
-    "counterOverhang": 2,
+    "counterOverhang": 2.2,
     "boardThickness": 1.8,
     "frontThickness": 1.8,
     "frontGap": 0.3,
     "frontSideGap": 0,
-    "ovenColumnDepth": 51,
-    "shallowLowerFront": 205.9,
+    "ovenColumnDepth": 56,
+    "shallowLowerFront": 203,
     "shallowFloorGap": 1,
+    "shallowWallGap": 1,
+    "tipOnGap": 0.3,
     "shallowTopBlend": 12,
     "vanityTop": 85,
     "wallCabinetBottom": 148,
@@ -405,6 +350,7 @@
     "stoneColor": "white",
     "handleColor": "bordo",
     "wallsTransparent": false,
-    "showDims": true
+    "showDims": true,
+    "tipOnSideGap": 0.2
   }
 }

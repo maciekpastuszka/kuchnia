@@ -1,4 +1,4 @@
-import { OVEN_COLUMN_WIDTH, doorCount, footprint } from '../catalog'
+import { OVEN_COLUMN_WIDTH, doorCount, footprint, itemSettings } from '../catalog'
 import type { Item, Settings } from '../types'
 
 /** Płyta widziana z góry, w układzie mebla: x wzdłuż frontu, z w głąb (front przy +z). */
@@ -27,7 +27,8 @@ function fronts(cuts: number[], z0: number, z1: number, sg: number): Board[] {
 const split = (x0: number, x1: number, count: 1 | 2) => (count === 1 ? [x0, x1] : [x0, (x0 + x1) / 2, x1])
 
 /** Płyty korpusu i fronty do rysowania na rzucie (bez szafek górnych, AGD na blacie i lodówki). */
-export function itemBoards(item: Item, s: Settings): Board[] {
+export function itemBoards(item: Item, settings: Settings): Board[] {
+  const s = itemSettings(item, settings)
   const { w, d } = footprint(item, s)
   const t = s.boardThickness
   const ft = s.frontThickness
@@ -62,19 +63,19 @@ export function itemBoards(item: Item, s: Settings): Board[] {
       ]
     }
     case 'oven_column': {
-      const zCF = -hd + s.ovenColumnDepth
+      const zFB = hd - ft
       const xL = -hw + (item.panelLeft ? t : 0)
       const xR = xL + OVEN_COLUMN_WIDTH
-      const out = [...carcass(xL, xR, -hd, zCF, t), ...fronts([xL, xR], zCF, hd, sg)]
+      const out = [...carcass(xL, xR, -hd, zFB - s.tipOnGap, t), ...fronts([xL, xR], zFB, hd, sg)]
       if (item.panelLeft) out.push(b(-hw, -hw + t, -hd, hd, 'front'))
       if (item.panelRight) out.push(b(hw - t, hw, -hd, hd, 'front'))
       return out
     }
     case 'shallow_column': {
-      const zCF = hd - ft
+      const zFB = hd - ft
       const xL = -hw + (item.panelLeft ? t : 0)
       const xR = hw - (item.panelRight ? t : 0)
-      const out = [...carcass(xL, xR, -hd, zCF, t), ...fronts(split(xL, xR, doorCount(item)), zCF, hd, sg)]
+      const out = [...carcass(xL, xR, -hd, zFB - s.tipOnGap, t), ...fronts(split(xL, xR, doorCount(item)), zFB, hd, sg)]
       if (item.panelLeft) out.push(b(-hw, -hw + t, -hd, hd, 'front'))
       if (item.panelRight) out.push(b(hw - t, hw, -hd, hd, 'front'))
       return out

@@ -58,6 +58,8 @@ export interface Item {
   hinge?: 'L' | 'R'
   /** Liczba skrzydeł drzwi; brak = 1 do 60 cm, szersze 2. */
   doors?: 1 | 2
+  /** Szafka dolna: własna głębokość korpusu (np. pod płytszym blatem); brak = z ustawień. */
+  carcassDepth?: number
   /** Wysokość lodówki wolnostojącej / szafki podwieszanej. */
   height?: number
   /** Liczba szuflad (szafka szufladowa, słupek z piekarnikiem). */
@@ -103,11 +105,16 @@ export interface Settings {
   frontGap: number
   /** O ile front jest węższy od swojej części korpusu z każdego boku. */
   frontSideGap: number
+  /** Głębokość korpusu słupka z piekarnikiem (bez luzu TIP-ON i frontu). */
   ovenColumnDepth: number
   /** Wysokość dolnego frontu płytkich słupków – z niej wynika podział na dolny i górny korpus. */
   shallowLowerFront: number
   /** Szczelina między podłogą a dolnym frontem płytkich słupków (front schodzi przed cokół). */
   shallowFloorGap: number
+  /** Zapas między plecami płytkich słupków a ścianą. */
+  shallowWallGap: number
+  /** Luz między tyłem frontu TIP-ON a korpusem – front musi dać się wcisnąć, żeby się otworzył. */
+  tipOnGap: number
   /** Blenda pod sufitem nad płytkimi słupkami (dochodzi do boku słupka z piekarnikiem). */
   shallowTopBlend: number
   /** Szafka podwieszana pod zlew: góra szafki od podłogi. */

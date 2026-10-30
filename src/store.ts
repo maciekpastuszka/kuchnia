@@ -35,6 +35,8 @@ interface State extends Project {
   addWallChain: (points: Pt[], closed: boolean, thickness: number) => void
   updateWall: (id: string, patch: Partial<Wall>) => void
   moveWallPoint: (from: Pt, to: Pt) => void
+  /** Przesuwa całą ścianę; dołączone ściany wydłużają się lub skracają razem z nią. */
+  moveWall: (id: string, delta: Pt) => void
   setWallLength: (id: string, length: number) => void
   updateSettings: (patch: Partial<Settings>) => void
   loadProject: (p: Project) => void
@@ -295,6 +297,26 @@ export const useStore = create<State>((set, get) => ({
         return { ...w, ...(p1 ? { x1: to.x, y1: to.y } : {}), ...(p2 ? { x2: to.x, y2: to.y } : {}) }
       }),
     })),
+  moveWall: (id, delta) => {
+    const w = get().walls.find((x) => x.id === id)
+    if (!w) return
+    const d = wallMoveDelta(w, get().walls, delta)
+    if (!d.x && !d.y) return
+    const ends = [
+      { x: w.x1, y: w.y1 },
+      { x: w.x2, y: w.y2 },
+    ]
+    const at = (x: number, y: number) => ends.some((e) => Math.abs(e.x - x) < 0.5 && Math.abs(e.y - y) < 0.5)
+    const r = (v: number) => Math.round(v * 100) / 100
+    set((s) => ({
+      walls: s.walls.map((o) => {
+        const p1 = at(o.x1, o.y1)
+        const p2 = at(o.x2, o.y2)
+        if (!p1 && !p2) return o
+        return { ...o, ...(p1 ? { x1: r(o.x1 + d.x), y1: r(o.y1 + d.y) } : {}), ...(p2 ? { x2: r(o.x2 + d.x), y2: r(o.y2 + d.y) } : {}) }
+      }),
+    }))
+  },
   setWallLength: (id, length) => {
     const w = get().walls.find((x) => x.id === id)
     if (!w || length <= 0) return
@@ -313,6 +335,17 @@ export const useStore = create<State>((set, get) => ({
     set({ walls: p.walls, items: p.items, settings: { ...DEFAULT_SETTINGS, ...p.settings }, selection: null })
   },
 }))
+
+/** Ściana z dołączonymi sąsiadami przesuwa się tylko prostopadle do siebie (sąsiedzi zostają pod tym samym kątem); wolnostojąca – swobodnie. */
+export function wallMoveDelta(w: Wall, walls: Wall[], delta: Pt): Pt {
+  const near = (ax: number, ay: number, bx: number, by: number) => Math.abs(ax - bx) < 0.5 && Math.abs(ay - by) < 0.5
+  const touches = (x: number, y: number) => walls.some((o) => o.id !== w.id && (near(o.x1, o.y1, x, y) || near(o.x2, o.y2, x, y)))
+  if (!touches(w.x1, w.y1) && !touches(w.x2, w.y2)) return delta
+  const len = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1
+  const n = { x: -(w.y2 - w.y1) / len, y: (w.x2 - w.x1) / len }
+  const k = delta.x * n.x + delta.y * n.y
+  return { x: n.x * k, y: n.y * k }
+}
 
 export function newRectRoom(w: number, d: number) {
   useStore.getState().loadProject({ walls: rectRoom(w, d), items: [], settings: useStore.getState().settings })

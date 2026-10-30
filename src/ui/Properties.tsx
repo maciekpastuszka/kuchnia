@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   HOB,
   OVEN,
@@ -22,8 +23,9 @@ import {
   wallCarcassBottom,
   wallPanelDepth,
   uid,
+  itemSettings,
 } from '../catalog'
-import { itemBox, wallLength } from '../geometry'
+import { itemBox, toWorld, wallLength, wallOutward } from '../geometry'
 import { useSelectedItem, useSelectedWall, useStore } from '../store'
 import type { Item, Settings, UpperOf, Wall, WallWindow } from '../types'
 import { itemWarnings } from '../validation'
@@ -115,6 +117,35 @@ function ItemProps({ item }: { item: Item }) {
             <input type="checkbox" checked={!!item.topBlend} onChange={(e) => change(item.id, { topBlend: e.target.checked })} />
             Niższa, z blendą na górze (jak nad płytkimi słupkami)
           </label>
+        </>
+      )}
+      {(item.type === 'base_drawers' || item.type === 'base_door' || item.type === 'base_blind_corner') && (
+        <>
+          <NumberField
+            label="Głębokość korpusu"
+            value={item.carcassDepth ?? useStore.getState().settings.baseCarcassDepth}
+            min={20}
+            step={0.1}
+            onChange={(v) => {
+              // plecy zostają na miejscu – środek przesuwa się o połowę zmiany w stronę frontu
+              const old = item.carcassDepth ?? useStore.getState().settings.baseCarcassDepth
+              const c = toWorld(item, 0, (v - old) / 2)
+              change(item.id, { carcassDepth: v === useStore.getState().settings.baseCarcassDepth ? undefined : v, x: c.x, y: c.y })
+            }}
+          />
+          {item.carcassDepth !== undefined && (
+            <p className="derived">
+              Własna głębokość (w ustawieniach {fmt(useStore.getState().settings.baseCarcassDepth)} cm). Zmiana przesuwa front, plecy zostają na miejscu.{' '}
+              <button
+                onClick={() => {
+                  const c = toWorld(item, 0, (useStore.getState().settings.baseCarcassDepth - (item.carcassDepth ?? 0)) / 2)
+                  change(item.id, { carcassDepth: undefined, x: c.x, y: c.y })
+                }}
+              >
+                Jak w ustawieniach
+              </button>
+            </p>
+          )}
         </>
       )}
       {(item.type === 'countertop' || item.type === 'shallow_column') && (
@@ -263,7 +294,8 @@ function ItemProps({ item }: { item: Item }) {
 }
 
 /** Rozpiska wymiarów do zamówienia. */
-function specs(item: Item, s: Settings): string[] {
+function specs(item: Item, settings: Settings): string[] {
+  const s = itemSettings(item, settings)
   const P = s.plinthHeight
   const H = s.baseCarcassHeight
   const t = s.boardThickness
@@ -310,7 +342,8 @@ function specs(item: Item, s: Settings): string[] {
       const nTop = ovenNicheTop(s)
       return [
         `Korpus ${OVEN_COLUMN_WIDTH} × ${fmt(nTop + t - P)} × ${fmt(s.ovenColumnDepth)} cm (do góry wnęki piekarnika)`,
-        `Plecy wycięte w strefie piekarnika, za korpusem ${fmt(baseWallGap(s))} cm luzu – wnęka razem z luzem ${fmt(s.ovenColumnDepth + baseWallGap(s))} cm (piekarnik ~55)`,
+        `Luz ${fmt(s.tipOnGap * 10)} mm między frontem a korpusem na wciśnięcie TIP-ON`,
+        `Plecy wycięte w strefie piekarnika – piekarnik (gł. ${fmt(OVEN.d)} cm z frontem) wchodzi w luz za korpusem`,
         `Wnęka ${fmt(OVEN_COLUMN_WIDTH - 2 * t)} × ${OVEN.nicheH} cm, piekarnik ${fmt(baseTop(s))}–${fmt(baseTop(s) + OVEN.h)} cm od podłogi`,
         item.underOvenDoor
           ? `Drzwi pod piekarnikiem ${fmt(OVEN_COLUMN_WIDTH - 2 * sg)} × ${fmt(H - s.frontGap)} cm, TIP-ON`
@@ -320,11 +353,11 @@ function specs(item: Item, s: Settings): string[] {
     }
     case 'shallow_column': {
       const inner = item.width - ((item.panelLeft ? t : 0) + (item.panelRight ? t : 0))
-      const cd = item.depth - s.frontThickness
+      const cd = item.depth - s.frontThickness - s.tipOnGap
       const split = shallowSplit(s)
       return [
         `Korpus ${fmt(inner)} × ${fmt(split - P)} × ${fmt(cd)} cm`,
-        `Front TIP-ON ${fmt(s.shallowLowerFront)} cm (od ${fmt(s.shallowFloorGap)} do ${fmt(s.shallowFloorGap + s.shallowLowerFront)} cm nad podłogą)`,
+        `Front TIP-ON ${fmt(s.shallowLowerFront)} cm (od ${fmt(s.shallowFloorGap)} do ${fmt(s.shallowFloorGap + s.shallowLowerFront)} cm nad podłogą), ${fmt(s.tipOnGap * 10)} mm luzu za frontem na wciśnięcie`,
         'Szafka górna z blendą to osobny element',
         `Cokół ${fmt(P)} cm schowany za dolnym frontem`,
         'Przykręcić do ściany (wąski i wysoki)',
@@ -370,7 +403,7 @@ function specs(item: Item, s: Settings): string[] {
     }
     case 'column_upper': {
       const u = columnUpperSpec(item, s)
-      const cd = item.depth - s.frontThickness
+      const cd = item.depth - s.frontThickness - s.tipOnGap
       const door = doorCount(item) === 1 ? fmt(item.width - 2 * sg) : `2 × ${fmt(item.width / 2 - 2 * sg)}`
       const out = [
         `Korpus ${fmt(item.width)} × ${fmt(u.carcass[1] - u.carcass[0])} × ${fmt(cd)} cm (od ${fmt(u.carcass[0])} cm)`,
@@ -425,9 +458,37 @@ function WallProps({ wall }: { wall: Wall }) {
           Usuń
         </button>
       </div>
-      <p className="derived">Zmiana długości przesuwa koniec ściany razem z dołączoną ścianą. Końce można też przeciągać na rzucie.</p>
+      <WallMove wall={wall} />
+      <p className="derived">
+        Zmiana długości przesuwa koniec ściany razem z dołączoną ścianą. Końce można przeciągać na rzucie, a całą ścianę przesuwasz, ciągnąc ją (Shift – co 1 mm) albo
+        strzałkami (Shift – o 10 cm). Dołączone ściany wydłużają się lub skracają, meble zostają na miejscu.
+      </p>
       <WallWindowsProps wall={wall} />
     </section>
+  )
+}
+
+/** Przesunięcie o zadaną odległość prostopadle do ściany – w stronę pokoju lub na zewnątrz. */
+function WallMove({ wall }: { wall: Wall }) {
+  const [by, setBy] = useState(1)
+  const n = wallOutward(wall)
+  const move = (sign: 1 | -1) => {
+    const store = useStore.getState()
+    store.checkpoint()
+    store.moveWall(wall.id, { x: n.x * by * sign, y: n.y * by * sign })
+  }
+  return (
+    <>
+      <NumberField label="Przesuń o" value={by} min={0.1} step={0.1} onChange={setBy} />
+      <div className="row">
+        <button onClick={() => move(-1)} title="Prostopadle do ściany, w stronę pokoju (lica)">
+          Do pokoju
+        </button>
+        <button onClick={() => move(1)} title="Prostopadle do ściany, w stronę jej grubości">
+          Na zewnątrz
+        </button>
+      </div>
+    </>
   )
 }
 

@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS: Settings = {
   ovenColumnDepth: 51,
   shallowLowerFront: 205.9,
   shallowFloorGap: 1,
+  shallowWallGap: 1,
+  tipOnGap: 0.3,
   shallowTopBlend: 12,
   vanityTop: 85,
   wallCabinetBottom: 148,
@@ -123,8 +125,15 @@ export function materialsFor(item: Item, s: Settings) {
 export const isOnCounter = (t: ItemType) => t === 'hob' || t === 'sink'
 export const hasWidth = (t: ItemType) => t !== 'hob' && t !== 'sink' && t !== 'oven_column' && t !== 'side_panel'
 
+/**
+ * Ustawienia widziane przez konkretny mebel: szafka z własną głębokością korpusu liczy wszystko od niej.
+ * Luzu za szafką (wallOffset) nie liczymy stąd – zostaje taki jak dla całej kuchni.
+ */
+export const itemSettings = (item: Item, s: Settings): Settings => (item.carcassDepth ? { ...s, baseCarcassDepth: item.carcassDepth } : s)
+
 /** Obrys w układzie lokalnym: w wzdłuż frontu, d w głąb. */
-export function footprint(item: Item, s: Settings): { w: number; d: number } {
+export function footprint(item: Item, settings: Settings): { w: number; d: number } {
+  const s = itemSettings(item, settings)
   switch (item.type) {
     case 'base_drawers':
     case 'base_door':
@@ -141,7 +150,8 @@ export function footprint(item: Item, s: Settings): { w: number; d: number } {
     case 'sink':
       return { w: SINK.w, d: SINK.d }
     case 'oven_column':
-      return { w: OVEN_COLUMN_WIDTH + panelCount(item) * s.boardThickness, d: s.ovenColumnDepth + s.frontThickness }
+      // korpus + luz TIP-ON + front
+      return { w: OVEN_COLUMN_WIDTH + panelCount(item) * s.boardThickness, d: s.ovenColumnDepth + s.tipOnGap + s.frontThickness }
     case 'shallow_column':
       return { w: item.width, d: item.depth }
     case 'wall_cabinet':
@@ -166,8 +176,14 @@ export const panelCount = (item: Item) => (item.panelLeft ? 1 : 0) + (item.panel
 /** Odsunięcie pleców od ściany przy przyciąganiu. */
 export function wallOffset(item: Item, s: Settings) {
   // słupek z piekarnikiem stoi z tym samym luzem co szafki dolne – fronty w jednej linii, piekarnik wchodzi w luz
-  return isBaseCabinet(item.type) || item.type === 'dishwasher' || item.type === 'filler' || item.type === 'oven_column' ? baseWallGap(s) : 0
+  if (isBaseCabinet(item.type) || item.type === 'dishwasher' || item.type === 'filler' || item.type === 'oven_column') return baseWallGap(s)
+  // płytkie słupki i ich szafki górne – z zapasem od ściany
+  if (item.type === 'shallow_column' || (item.type === 'column_upper' && item.upperOf === 'shallow')) return s.shallowWallGap
+  return 0
 }
+
+/** Fronty szafek dolnych: o pół szczeliny od dołu i od góry korpusu – z każdej strony tyle samo. */
+export const baseFrontRange = (s: Settings): [number, number] => [s.plinthHeight + s.frontGap / 2, s.plinthHeight + s.baseCarcassHeight - s.frontGap / 2]
 
 /** Wysokości frontów od dołu, razem z ich dolną krawędzią. */
 export function drawerFronts(count: 1 | 2 | 3, bottom: number, carcassHeight: number, s: Settings) {
@@ -204,7 +220,8 @@ export function newItem(entry: CatalogEntry, x: number, y: number, s: Settings):
 export const uid = () => Math.random().toString(36).slice(2, 9)
 
 /** Obrys samego korpusu (bez frontów, płyt bocznych i blend) w układzie mebla; null dla mebli bez korpusu. */
-export function carcassBox(item: Item, s: Settings): { x0: number; x1: number; z0: number; z1: number } | null {
+export function carcassBox(item: Item, settings: Settings): { x0: number; x1: number; z0: number; z1: number } | null {
+  const s = itemSettings(item, settings)
   const { w, d } = footprint(item, s)
   const t = s.boardThickness
   const hw = w / 2
@@ -221,7 +238,7 @@ export function carcassBox(item: Item, s: Settings): { x0: number; x1: number; z
       return { x0: xL, x1: xL + OVEN_COLUMN_WIDTH, z0: -hd, z1: -hd + s.ovenColumnDepth }
     }
     case 'shallow_column':
-      return { x0: -hw + (item.panelLeft ? t : 0), x1: hw - (item.panelRight ? t : 0), z0: -hd, z1: hd - s.frontThickness }
+      return { x0: -hw + (item.panelLeft ? t : 0), x1: hw - (item.panelRight ? t : 0), z0: -hd, z1: hd - s.frontThickness - s.tipOnGap }
     case 'wall_cabinet':
       return { x0: -hw, x1: hw, z0: -hd, z1: hd - s.frontThickness }
     // płyta pod szafkami górnymi – zaznaczona pokazuje swoje wymiary tak jak korpus
@@ -230,7 +247,7 @@ export function carcassBox(item: Item, s: Settings): { x0: number; x1: number; z
       return { x0: -hw, x1: hw, z0: -hd, z1: hd }
     case 'column_upper':
     case 'vanity':
-      return { x0: -hw, x1: hw, z0: -hd, z1: hd - s.frontThickness }
+      return { x0: -hw, x1: hw, z0: -hd, z1: hd - s.frontThickness - s.tipOnGap }
     default:
       return null
   }
@@ -256,8 +273,9 @@ export function columnUpperSpec(item: Item, s: Settings) {
       // nad dolnym korpusem słupka z piekarnikiem; front od góry wnęki – w linii dołu frontów szafek górnych
       return { carcass: [ovenNicheTop(s) + t, split] as R2, front: [ovenNicheTop(s), split - g / 2] as R2, mask: null, maskSideGap: true }
     case 'oven_high': {
-      const top = C - s.ceilingGap
-      return { carcass: [split, top] as R2, front: [split + g / 2, top - g] as R2, mask: [top, C] as R2, maskSideGap: true }
+      // blenda pod sufitem taka sama jak nad płytkimi słupkami, w jednej linii
+      const top = shallowUpperTop(s)
+      return { carcass: [split, top] as R2, front: [split + g / 2, top - g] as R2, mask: [top, C] as R2, maskSideGap: false }
     }
     case 'shallow': {
       const top = shallowUpperTop(s)

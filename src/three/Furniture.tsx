@@ -2,7 +2,7 @@ import { Html } from '@react-three/drei'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
-import { FRIDGE, HOB, OVEN, OVEN_COLUMN_WIDTH, SINK, baseTop, counterTop, doorCount, drawerFronts, fmt, footprint, materialsFor, columnUpperSpec, ovenNicheTop, vanityRange, shallowSplit, sidePanelPieces, wallCarcassBottom } from '../catalog'
+import { FRIDGE, HOB, OVEN, OVEN_COLUMN_WIDTH, SINK, baseTop, counterTop, doorCount, drawerFronts, fmt, footprint, materialsFor, columnUpperSpec, baseFrontRange, itemSettings, ovenNicheTop, vanityRange, shallowSplit, sidePanelPieces, wallCarcassBottom } from '../catalog'
 import { itemBox, toLocal } from '../geometry'
 import { useStore } from '../store'
 import type { Item, Settings } from '../types'
@@ -257,15 +257,14 @@ function BaseCabinet({ item, c }: { item: Item; c: Ctx }) {
   const zCF = zBack + s.baseCarcassDepth
   const zF = d / 2
   const x: R = [-w / 2, w / 2]
-  const g = s.frontGap
   return (
     <group>
       <Carcass x={x} y={[P, P + H]} z={[zBack, zCF]} top={false} c={c} />
       <Plinth x={x} zFront={zF} c={c} />
       {item.type === 'base_drawers' ? (
-        <Drawers name="drawer" count={item.drawers ?? 3} x={x} bottom={P} height={H} zCF={zCF} zF={zF} handle c={c} />
+        <Drawers name="drawer" count={item.drawers ?? 3} x={x} bottom={baseFrontRange(s)[0]} height={H} zCF={zCF} zF={zF} handle c={c} />
       ) : (
-        <Doors name="door" x={x} y={[P, P + H - g]} z={[zCF, zF]} hinge={item.hinge ?? 'L'} count={doorCount(item)} handle c={c} />
+        <Doors name="door" x={x} y={baseFrontRange(s)} z={[zCF, zF]} hinge={item.hinge ?? 'L'} count={doorCount(item)} handle c={c} />
       )}
     </group>
   )
@@ -279,11 +278,10 @@ function CornerCabinet({ item, c }: { item: Item; c: Ctx }) {
   const P = s.plinthHeight
   const H = s.baseCarcassHeight
   const t = s.boardThickness
-  const g = s.frontGap
   const cd = s.baseCarcassDepth
   const inner = -h + cd
   const y: R = [P, P + H]
-  const fy: R = [P, P + H - g]
+  const fy: R = baseFrontRange(s)
   return (
     <group>
       {/* bok na końcu ramienia wzdłuż x */}
@@ -312,13 +310,14 @@ function OvenColumn({ item, c }: { item: Item; c: Ctx }) {
   const { s } = c
   const { w, d } = footprint(item, s)
   const t = s.boardThickness
-  const g = s.frontGap
   const P = s.plinthHeight
   const xL = -w / 2 + (item.panelLeft ? t : 0)
   const xR = xL + OVEN_COLUMN_WIDTH
   const zBack = -d / 2
-  const zCF = zBack + s.ovenColumnDepth
   const zF = d / 2
+  // front TIP-ON: tył frontu na zFB, korpus kończy się o luz wcześniej
+  const zFB = zF - s.frontThickness
+  const zCF = zFB - s.tipOnGap
   const bTop = baseTop(s)
   const nTop = ovenNicheTop(s)
   return (
@@ -330,11 +329,11 @@ function OvenColumn({ item, c }: { item: Item; c: Ctx }) {
       <Carcass x={[xL, xR]} y={[P, nTop + t]} z={[zBack, zCF]} top backTo={bTop - t} c={c} />
       <Panel x={[xL + t, xR - t]} y={[bTop - t, bTop]} z={[zBack + 0.3, zCF]} material={c.carcass} />
       {item.underOvenDoor ? (
-        <Doors name="under" x={[xL, xR]} y={[P, bTop - g]} z={[zCF, zF]} hinge={item.hinge ?? 'L'} count={1} handle={false} c={c} />
+        <Doors name="under" x={[xL, xR]} y={baseFrontRange(s)} z={[zFB, zF]} hinge={item.hinge ?? 'L'} count={1} handle={false} c={c} />
       ) : (
-        <Drawers name="under" count={item.drawers ?? 3} x={[xL, xR]} bottom={P} height={s.baseCarcassHeight} zCF={zCF} zF={zF} handle={false} c={c} />
+        <Drawers name="under" count={item.drawers ?? 3} x={[xL, xR]} bottom={baseFrontRange(s)[0]} height={s.baseCarcassHeight} zCF={zFB} zF={zF} handle={false} c={c} />
       )}
-      <Oven id={`${c.id}:oven`} x={(xL + xR) / 2} y={bTop} z={zCF} handle={handleMaterial('steel')} />
+      <Oven id={`${c.id}:oven`} x={(xL + xR) / 2} y={bTop} z={zFB} handle={handleMaterial('steel')} />
     </group>
   )
 }
@@ -378,8 +377,9 @@ function ShallowColumn({ item, c }: { item: Item; c: Ctx }) {
   const xL = -w / 2 + (item.panelLeft ? t : 0)
   const xR = w / 2 - (item.panelRight ? t : 0)
   const zBack = -d / 2
-  const zCF = d / 2 - s.frontThickness
   const zF = d / 2
+  const zFB = zF - s.frontThickness
+  const zCF = zFB - s.tipOnGap
   const hinge = item.hinge ?? 'L'
   return (
     <group>
@@ -387,7 +387,7 @@ function ShallowColumn({ item, c }: { item: Item; c: Ctx }) {
       {item.panelRight && <FrontPanel x={[w / 2 - t, w / 2]} y={[0, C]} z={[zBack, zF]} c={c} />}
       <Plinth x={[xL, xR]} zFront={zF} c={c} />
       <Carcass x={[xL, xR]} y={[P, split]} z={[zBack, zCF]} top c={c} />
-      <Doors name="lower" x={[xL, xR]} y={[s.shallowFloorGap, split - g / 2]} z={[zCF, zF]} hinge={hinge} count={doorCount(item)} handle={false} c={c} />
+      <Doors name="lower" x={[xL, xR]} y={[s.shallowFloorGap, split - g / 2]} z={[zFB, zF]} hinge={hinge} count={doorCount(item)} handle={false} c={c} />
     </group>
   )
 }
@@ -416,14 +416,15 @@ function ColumnUpper({ item, c }: { item: Item; c: Ctx }) {
   const u = columnUpperSpec(item, s)
   const sg = s.frontSideGap
   const zBack = -d / 2
-  const zCF = d / 2 - s.frontThickness
   const zF = d / 2
+  const zFB = zF - s.frontThickness
+  const zCF = zFB - s.tipOnGap
   const x: R = [-w / 2, w / 2]
   return (
     <group>
       <Carcass x={x} y={u.carcass} z={[zBack, zCF]} top c={c} />
-      <Doors name="door" x={x} y={u.front} z={[zCF, zF]} hinge={item.hinge ?? 'L'} count={doorCount(item)} handle={false} c={c} />
-      {u.mask && <FrontPanel x={u.maskSideGap ? [x[0] + sg, x[1] - sg] : x} y={u.mask} z={[zCF, zF]} c={c} />}
+      <Doors name="door" x={x} y={u.front} z={[zFB, zF]} hinge={item.hinge ?? 'L'} count={doorCount(item)} handle={false} c={c} />
+      {u.mask && <FrontPanel x={u.maskSideGap ? [x[0] + sg, x[1] - sg] : x} y={u.mask} z={[zFB, zF]} c={c} />}
     </group>
   )
 }
@@ -477,17 +478,16 @@ function Dishwasher({ item, c }: { item: Item; c: Ctx }) {
   const { w, d } = footprint(item, s)
   const P = s.plinthHeight
   const H = s.baseCarcassHeight
-  const g = s.frontGap
   const zBack = -d / 2
   const zCF = zBack + s.baseCarcassDepth
   const zF = d / 2
-  const top = P + H - g
+  const [bottom, top] = baseFrontRange(s)
   return (
     <group>
       <Panel x={[-w / 2 + 0.5, w / 2 - 0.5]} y={[P, P + H - 1]} z={[zBack + 2, zCF]} material={MAT.steel()} shadow={false} />
       <Plinth x={[-w / 2, w / 2]} zFront={zF} c={c} />
       <Openable id={`${c.id}:door`} kind="flap" pivot={[0, P, zF]}>
-        <FrontPanel x={[-w / 2 + s.frontSideGap, w / 2 - s.frontSideGap]} y={[P, top]} z={[zCF, zF]} c={c} />
+        <FrontPanel x={[-w / 2 + s.frontSideGap, w / 2 - s.frontSideGap]} y={[bottom, top]} z={[zCF, zF]} c={c} />
         <Handle cx={0} cy={top - 4} z={zF} material={c.handle} />
       </Openable>
     </group>
@@ -524,7 +524,6 @@ function BlindCorner({ item, c }: { item: Item; c: Ctx }) {
   const { w, d } = footprint(item, s)
   const P = s.plinthHeight
   const H = s.baseCarcassHeight
-  const g = s.frontGap
   const zBack = -d / 2
   const zCF = zBack + s.baseCarcassDepth
   const zF = d / 2
@@ -537,8 +536,8 @@ function BlindCorner({ item, c }: { item: Item; c: Ctx }) {
     <group>
       <Carcass x={[-w / 2, w / 2]} y={[P, P + H]} z={[zBack, zCF]} top={false} c={c} />
       <Plinth x={[-w / 2, w / 2]} zFront={zF} c={c} />
-      <FrontPanel x={blind} y={[P, P + H - g]} z={[zCF, zF]} c={c} />
-      <Doors name="door" x={door} y={[P, P + H - g]} z={[zCF, zF]} hinge={item.hinge ?? (right ? 'L' : 'R')} count={1} handle c={c} />
+      <FrontPanel x={blind} y={baseFrontRange(s)} z={[zCF, zF]} c={c} />
+      <Doors name="door" x={door} y={baseFrontRange(s)} z={[zCF, zF]} hinge={item.hinge ?? (right ? 'L' : 'R')} count={1} handle c={c} />
     </group>
   )
 }
@@ -551,7 +550,7 @@ function Filler({ item, c }: { item: Item; c: Ctx }) {
   return (
     <group>
       <Plinth x={[-w / 2, w / 2]} zFront={zF} c={c} />
-      <FrontPanel x={[-w / 2 + s.frontSideGap, w / 2 - s.frontSideGap]} y={[s.plinthHeight, s.plinthHeight + s.baseCarcassHeight - s.frontGap]} z={[zF - s.frontThickness, zF]} c={c} />
+      <FrontPanel x={[-w / 2 + s.frontSideGap, w / 2 - s.frontSideGap]} y={baseFrontRange(s)} z={[zF - s.frontThickness, zF]} c={c} />
       <Panel x={[-w / 2, w / 2]} y={[s.plinthHeight, s.plinthHeight + s.baseCarcassHeight]} z={[zF - s.frontThickness - 8, zF - s.frontThickness]} material={c.carcass} />
     </group>
   )
@@ -657,7 +656,7 @@ function Sink({ s }: { s: Settings }) {
 }
 
 export function Furniture({ item, items, s }: { item: Item; items: Item[]; s: Settings }) {
-  const c = useCtx(s, item)
+  const c = useCtx(itemSettings(item, s), item)
   switch (item.type) {
     case 'base_drawers':
     case 'base_door':

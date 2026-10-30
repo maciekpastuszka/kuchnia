@@ -139,6 +139,7 @@ function SettingsPanel() {
       <NumberField label="Korpus dolny – wysokość" value={s.baseCarcassHeight} onChange={(v) => set({ baseCarcassHeight: v })} min={40} />
       <NumberField label="Korpus dolny – głębokość" value={s.baseCarcassDepth} onChange={(v) => set({ baseCarcassDepth: v })} min={20} />
       <NumberField label="Blat – głębokość" value={s.counterDepth} onChange={(v) => set({ counterDepth: v })} min={30} />
+      <NumberField label="Słupek z piekarnikiem – głębokość korpusu" value={s.ovenColumnDepth} onChange={(v) => set({ ovenColumnDepth: v })} min={40} step={0.1} />
       <NumberField label="Front węższy z boku (na stronę)" value={s.frontSideGap} onChange={(v) => set({ frontSideGap: v })} min={0} step={0.05} />
       <NumberField label="Blat przed frontem" value={s.counterOverhang} onChange={(v) => set({ counterOverhang: v })} min={0} step={0.5} />
       <p className="derived">
@@ -153,6 +154,8 @@ function SettingsPanel() {
       <NumberField label="Płytkie słupki – dolny front" value={s.shallowLowerFront} onChange={(v) => set({ shallowLowerFront: v })} min={30} step={0.1} />
       <NumberField label="Płytkie słupki – blenda pod sufitem" value={s.shallowTopBlend} onChange={(v) => set({ shallowTopBlend: v })} min={0} step={0.5} />
       <NumberField label="Płytkie słupki – szczelina nad podłogą" value={s.shallowFloorGap} onChange={(v) => set({ shallowFloorGap: v })} min={0} step={0.1} />
+      <NumberField label="Płytkie słupki – zapas od ściany" value={s.shallowWallGap} onChange={(v) => set({ shallowWallGap: v })} min={0} step={0.1} />
+      <NumberField label="TIP-ON – luz między frontem a korpusem" value={s.tipOnGap} onChange={(v) => set({ tipOnGap: v })} min={0} step={0.05} />
       <p className="derived">
         Dolny front od {fmt(s.shallowFloorGap)} do <b>{fmt(s.shallowFloorGap + s.shallowLowerFront)} cm</b> od podłogi
       </p>

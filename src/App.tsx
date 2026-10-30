@@ -39,6 +39,13 @@ function useShortcuts() {
         st.rotateSelected(e.shiftKey ? -1 : 1)
       } else if (e.key === 'Escape') {
         st.select(null)
+      } else if (e.key.startsWith('Arrow') && st.selection?.kind === 'wall') {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0
+        if (!e.repeat) st.checkpoint()
+        st.moveWall(st.selection.id, { x: dx, y: dy })
       } else if (e.key.startsWith('Arrow') && st.selection?.kind === 'item') {
         e.preventDefault()
         const item = st.items.find((i) => i.id === st.selection!.id)

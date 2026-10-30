@@ -17,7 +17,7 @@ import {
   type Pt,
 } from '../geometry'
 import { counterItemClearances } from '../clearances'
-import { useStore } from '../store'
+import { useStore, wallMoveDelta } from '../store'
 import type { Item, Wall } from '../types'
 import { ItemBoards, ItemShape, itemLabel } from './ItemShape'
 import { measureSnap, type MeasureSnap } from './measure'
@@ -32,6 +32,7 @@ type Drag =
   | { mode: 'pan'; sx: number; sy: number; view: View }
   | { mode: 'item'; id: string; dx: number; dy: number; sx: number; sy: number; moved: boolean; cycle: Item[] | null }
   | { mode: 'point'; from: Pt; moved: boolean }
+  | { mode: 'wall'; id: string; start: Pt; applied: Pt; sx: number; sy: number; moved: boolean }
   | null
 
 /** Kolejność wybierania przy nakładaniu: AGD na blacie, szafki górne, szafki dolne, na końcu blat. */
@@ -255,6 +256,7 @@ export function PlanView() {
     const wall = hitWall(p)
     if (wall) {
       store.select({ kind: 'wall', id: wall.id })
+      drag.current = { mode: 'wall', id: wall.id, start: p, applied: { x: 0, y: 0 }, sx: e.clientX, sy: e.clientY, moved: false }
       return
     }
     store.select(null)
@@ -279,6 +281,18 @@ export function PlanView() {
       d.moved = true
       const pos = snapPosition(item, { x: p.x - d.dx, y: p.y - d.dy }, store.items, store.walls, store.settings, 14 / view.scale)
       store.updateItem(d.id, pos)
+    } else if (d.mode === 'wall') {
+      if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 3) return
+      const wall = store.walls.find((w) => w.id === d.id)
+      if (!wall) return
+      if (!d.moved) store.checkpoint()
+      d.moved = true
+      // całkowite przesunięcie od chwytu, co 1 cm (z Shift co 1 mm); stosujemy tylko różnicę względem już wykonanego
+      const step = e.shiftKey ? 0.1 : 1
+      const raw = wallMoveDelta(wall, store.walls, { x: p.x - d.start.x, y: p.y - d.start.y })
+      const total = { x: Math.round(raw.x / step) * step, y: Math.round(raw.y / step) * step }
+      store.moveWall(d.id, { x: total.x - d.applied.x, y: total.y - d.applied.y })
+      d.applied = total
     } else if (d.mode === 'point') {
       if (!d.moved) store.checkpoint()
       d.moved = true
