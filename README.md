@@ -17,7 +17,7 @@ npm run dev   # http://localhost:5181
 | Uchwyty | płaskie owalne 96 mm (seria Kolory Płaskie, drzazgasklep.pl), bordo; dł. 144, szer. 18, wys. 24 mm – szafki dolne; słupki TIP-ON, szafki górne chwyt od dołu |
 | Fronty | o 2 mm węższe z każdego boku od korpusu (4 mm między sąsiednimi), w pionie szczeliny 3 mm |
 | 3 szuflady | fronty 18,5 / 29,3 / 29,3 cm (od góry) |
-| Płyta Amica PC7511FT | 78 × 52,2 cm, wycięcie 75 × 49 (wg e-katalog – sprawdzić w instrukcji), szafka 90 cm |
+| Płyta Amica PC7511FT | 77 × 51,8 cm, wycięcie 75,3 × 49, szafka 90 cm |
 | Zlew Franke BXX 210/110-68 | 72,5 × 45, komora 68,5 × 41 × 20, podwieszany, szafka min. 80 cm |
 | Słupek z piekarnikiem | standardowy korpus 60 × gł. 51 z piekarnikiem, nad nim 2 osobne szafki górne, 5,2 cm od ściany jak szafki dolne, plecy wycięte przy piekarniku; fronty nakładane TIP-ON, piekarnik 88–147,5 cm, pod nim drzwiczki; szafki nad piekarnikiem z podziałem na 207,1 cm (linia frontów płytkich słupków); obok osobne płyty boczne 1,8 × 58 × 270 od ściany do lica frontów (od strony płytkich słupków z 2 kawałków w linii ich frontów i niższa o 12 cm – nad nią blenda w linii blendy nad słupkami) |
 | Płytki słupek | dolna szafka + osobna szafka górna z blendą; 24 cm z frontem (korpus 22,2), dolny front 205,9 cm od 1 cm nad podłogą (góra na 206,9 cm – lico z drzwiami ukrytymi), cokół schowany za frontem, dwa korpusy, TIP-ON; na górze blenda 12 cm do boku słupka z piekarnikiem |

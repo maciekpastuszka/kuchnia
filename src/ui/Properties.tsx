@@ -303,7 +303,7 @@ function specs(item: Item, s: Settings): string[] {
     case 'countertop':
       return [`Konglomerat ${fmt(item.width)} × ${fmt(item.depth)} × ${fmt(s.counterThickness)} cm`, `Wysięg przed fronty ${fmt(s.counterOverhang)} cm`]
     case 'hob':
-      return [`Amica PC7511FT ${fmt(HOB.w)} × ${fmt(HOB.d)} × ${fmt(HOB.h)} cm`, `Wycięcie ${HOB.cutW} × ${HOB.cutD} cm (sprawdź w instrukcji)`, 'Zasilanie 400 V, 8,7 kW']
+      return [`Amica PC7511FT ${fmt(HOB.w)} × ${fmt(HOB.d)} × ${fmt(HOB.h)} cm`, `Wycięcie ${fmt(HOB.cutW)} × ${fmt(HOB.cutD)} cm`, 'Zasilanie 400 V, 8,7 kW']
     case 'sink':
       return [`Franke BXX 210/110-68 ${fmt(SINK.w)} × ${fmt(SINK.d)} cm`, `Komora ${fmt(SINK.bowlW)} × ${fmt(SINK.bowlD)} × ${SINK.bowlH} cm`, 'Montaż podwieszany – otwór wg szablonu Franke']
     case 'oven_column': {

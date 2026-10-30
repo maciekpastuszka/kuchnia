@@ -32,7 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 /** Amica PC7511FT – wymiary z karty produktu, wycięcie wg e-katalog (do potwierdzenia w instrukcji). */
-export const HOB = { w: 78, d: 52.2, h: 4.8, cutW: 75, cutD: 49 }
+export const HOB = { w: 77, d: 51.8, h: 4.8, cutW: 75.3, cutD: 49 }
 /** Franke Box BXX 210/110-68 – montaż podwieszany. */
 export const SINK = { w: 72.5, d: 45, bowlW: 68.5, bowlD: 41, bowlH: 20 }
 /** Amica EED37671BA – 59,5 × 59,5 × 57, wnęka 60 cm wysokości. */
@@ -76,7 +76,7 @@ export const CATALOG: CatalogEntry[] = [
   { key: 'blind', type: 'base_blind_corner', label: 'Szafka narożna – ślepy narożnik', hint: 'korpus 90: blenda 40 + drzwiczki 49,6', defaults: { width: 90, blindSide: 'L', blindWidth: 40, hinge: 'R' } },
   { key: 'filler', type: 'filler', label: 'Blenda', hint: 'wypełnienie przy narożniku lub ścianie, od 0,5 cm', defaults: { width: 7 } },
   { key: 'counter', type: 'countertop', label: 'Blat konglomerat 2 cm', hint: 'głębokość 60 cm', defaults: { width: 120 } },
-  { key: 'hob', type: 'hob', label: 'Płyta Amica PC7511FT', hint: '78 × 52,2 cm, wycięcie 75 × 49', defaults: {} },
+  { key: 'hob', type: 'hob', label: 'Płyta Amica PC7511FT', hint: '77 × 51,8 cm, wycięcie 75,3 × 49', defaults: {} },
   { key: 'sink', type: 'sink', label: 'Zlew Franke BXX 210/110-68', hint: 'podwieszany, komora 68,5 × 41', defaults: {} },
   { key: 'oven', type: 'oven_column', label: 'Słupek z piekarnikiem Amica', hint: 'EED37671BA, fronty nakładane, TIP-ON', defaults: { underOvenDoor: true, hinge: 'L' } },
   { key: 'shallow', type: 'shallow_column', label: 'Płytki słupek 24 cm', hint: 'dolna + górna szafka, TIP-ON', defaults: { width: 40, hinge: 'L' } },
