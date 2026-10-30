@@ -1,15 +1,10 @@
 import { useEffect } from 'react'
 import { PlanView } from './plan/PlanView'
-import { useStore, type ViewMode } from './store'
+import { useStore } from './store'
 import { Scene3D } from './three/Scene3D'
 import { Properties } from './ui/Properties'
-import { Sidebar } from './ui/Sidebar'
-
-const VIEWS: { mode: ViewMode; label: string }[] = [
-  { mode: 'split', label: 'Rzut + 3D' },
-  { mode: 'plan', label: 'Rzut' },
-  { mode: '3d', label: '3D' },
-]
+import { Icon } from './ui/icons'
+import { ProjectMenu, SideRail, WallTools } from './ui/Sidebar'
 
 function useShortcuts() {
   useEffect(() => {
@@ -60,6 +55,25 @@ function useShortcuts() {
   }, [])
 }
 
+/** Rzut i 3D zawsze obok siebie; ikona w rogu powiększa widok na całe okno i przywraca połowę. */
+function ViewPane({ mode, label, children }: { mode: 'plan' | '3d'; label: string; children: React.ReactNode }) {
+  const viewMode = useStore((s) => s.viewMode)
+  const maximized = viewMode === mode
+  return (
+    <div className="view">
+      {children}
+      <button
+        className="view-toggle"
+        title={maximized ? `${label}: zmniejsz do połowy okna` : `${label}: powiększ na całe okno`}
+        aria-label={maximized ? `Zmniejsz ${label}` : `Powiększ ${label}`}
+        onClick={() => useStore.getState().setViewMode(maximized ? 'split' : mode)}
+      >
+        <Icon name={maximized ? 'restore' : 'maximize'} size={16} />
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   useShortcuts()
   const viewMode = useStore((s) => s.viewMode)
@@ -72,38 +86,33 @@ export default function App() {
     <div className="app">
       <header className="toolbar">
         <strong className="brand">Edytor kuchni</strong>
-        <div className="segmented">
-          {VIEWS.map((v) => (
-            <button key={v.mode} className={viewMode === v.mode ? 'active' : ''} onClick={() => useStore.getState().setViewMode(v.mode)}>
-              {v.label}
-            </button>
-          ))}
+        <WallTools />
+        <div className="tool-group">
+          <button disabled={!canUndo} onClick={() => useStore.getState().undo()} title="Cofnij (Ctrl+Z)" aria-label="Cofnij">
+            <Icon name="undo" size={16} />
+          </button>
+          <button disabled={!canRedo} onClick={() => useStore.getState().redo()} title="Ponów (Ctrl+Shift+Z)" aria-label="Ponów">
+            <Icon name="redo" size={16} />
+          </button>
         </div>
-        <button disabled={!canUndo} onClick={() => useStore.getState().undo()} title="Ctrl+Z">
-          ↶ Cofnij
-        </button>
-        <button disabled={!canRedo} onClick={() => useStore.getState().redo()} title="Ctrl+Shift+Z">
-          ↷ Ponów
-        </button>
-        {viewMode !== '3d' && <button onClick={() => window.dispatchEvent(new Event('plan:fit'))}>Dopasuj rzut</button>}
-        {viewMode !== 'plan' && <button onClick={() => window.dispatchEvent(new Event('3d:reset'))}>Kamera 3D</button>}
         <span className="spacer" />
-        <span className="muted">
+        <span className="muted counts">
           {wallCount} ścian · {itemCount} elementów
         </span>
+        <ProjectMenu />
       </header>
       <div className="main">
-        <Sidebar />
+        <SideRail />
         <div className={`views views-${viewMode}`}>
           {viewMode !== '3d' && (
-            <div className="view">
+            <ViewPane mode="plan" label="rzut">
               <PlanView />
-            </div>
+            </ViewPane>
           )}
           {viewMode !== 'plan' && (
-            <div className="view">
+            <ViewPane mode="3d" label="widok 3D">
               <Scene3D />
-            </div>
+            </ViewPane>
           )}
         </div>
         <Properties />

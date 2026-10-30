@@ -11,6 +11,8 @@ import {
   wallLength,
   wallOutward,
   wallPolygon,
+  wallWindows,
+  windowOutline,
   type Box,
   type Pt,
 } from '../geometry'
@@ -363,6 +365,9 @@ export function PlanView() {
               vectorEffect="non-scaling-stroke"
             />
           ))}
+          {walls.map((w) => (
+            <WallWindows key={`win-${w.id}`} wall={w} selected={selectedWall?.id === w.id} px={px} />
+          ))}
 
           {layers.map((layer, li) => (
             <g key={li}>
@@ -577,6 +582,56 @@ function ItemLabel({ item, px }: { item: Item; px: (n: number) => number }) {
 
 function hitCount(item: Item, items: Item[], s: Parameters<typeof itemBox>[1]) {
   return items.filter((o) => o.id !== item.id && pointInPolygon({ x: item.x, y: item.y }, itemOutline(o, s))).length + 1
+}
+
+/** Okna na rzucie: otwór przez całą grubość z podwójną linią szyby; przy zaznaczonej ścianie – wymiary od początku ściany. */
+function WallWindows({ wall, selected, px }: { wall: Wall; selected: boolean; px: (n: number) => number }) {
+  const wins = wallWindows(wall)
+  if (!wins.length) return null
+  const len = wallLength(wall) || 1
+  const d = { x: (wall.x2 - wall.x1) / len, y: (wall.y2 - wall.y1) / len }
+  const n = wallOutward(wall)
+  const t = wall.thickness
+  const at = (s: number, k: number) => ({ x: wall.x1 + d.x * s + n.x * k, y: wall.y1 + d.y * s + n.y * k })
+  let ang = (Math.atan2(d.y, d.x) * 180) / Math.PI
+  if (ang > 90 || ang <= -90) ang += 180
+  const dim = (s0: number, s1: number, k: number, label: string, key: string) => {
+    const a = at(s0, k)
+    const b = at(s1, k)
+    const m = at((s0 + s1) / 2, k + px(4))
+    const tick = px(4)
+    return (
+      <g key={key} className="dimension window-dim">
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} vectorEffect="non-scaling-stroke" />
+        {[a, b].map((p, i) => (
+          <line key={i} x1={p.x - n.x * tick} y1={p.y - n.y * tick} x2={p.x + n.x * tick} y2={p.y + n.y * tick} vectorEffect="non-scaling-stroke" />
+        ))}
+        <text x={m.x} y={m.y} transform={`rotate(${ang} ${m.x} ${m.y})`} dy={px(4)} fontSize={px(11)} textAnchor="middle">
+          {label}
+        </text>
+      </g>
+    )
+  }
+  return (
+    <g>
+      {wins.map((win) => {
+        const glass = [t * 0.42, t * 0.58].map((k) => [at(win.from, k), at(win.to, k)])
+        return (
+          <g key={win.id}>
+            <polygon points={windowOutline(wall, win.from, win.to).map((p) => `${p.x},${p.y}`).join(' ')} className="window" vectorEffect="non-scaling-stroke" />
+            {glass.map(([a, b], i) => (
+              <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="window-glass" vectorEffect="non-scaling-stroke" />
+            ))}
+          </g>
+        )
+      })}
+      {selected &&
+        wins.flatMap((win, i) => [
+          dim(i === 0 ? 0 : wins[i - 1].to, win.from, t + px(16), fmt(win.from - (i === 0 ? 0 : wins[i - 1].to)), `o${win.id}`),
+          dim(win.from, win.to, t + px(16), `okno ${fmt(win.to - win.from)} · parapet ${fmt(win.sill)} · wys. ${fmt(win.height)}`, `w${win.id}`),
+        ])}
+    </g>
+  )
 }
 
 function WallDimension({ wall, px }: { wall: Wall; px: (n: number) => number }) {

@@ -118,6 +118,67 @@ export function wallPolygon(w: Wall, walls: Wall[]): Pt[] {
   return [a, b, { x: b.x + n.x * t, y: b.y + n.y * t }, { x: a.x + n.x * t, y: a.y + n.y * t }]
 }
 
+/** Wycinek wielokąta między dwiema płaszczyznami prostopadłymi do ściany: s = (p − początek)·kierunek ∈ [a, b]. */
+function clipAlong(poly: Pt[], o: Pt, d: Pt, a: number, b: number): Pt[] {
+  const clip = (pts: Pt[], keep: (s: number) => number) => {
+    const out: Pt[] = []
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i]
+      const q = pts[(i + 1) % pts.length]
+      const fp = keep((p.x - o.x) * d.x + (p.y - o.y) * d.y)
+      const fq = keep((q.x - o.x) * d.x + (q.y - o.y) * d.y)
+      if (fp >= 0) out.push(p)
+      if ((fp >= 0) !== (fq >= 0)) {
+        const t = fp / (fp - fq)
+        out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t })
+      }
+    }
+    return out
+  }
+  return clip(clip(poly, (s) => s - a), (s) => b - s)
+}
+
+/** Okna ściany przycięte do jej długości, posortowane wzdłuż ściany. */
+export function wallWindows(w: Wall) {
+  const len = wallLength(w)
+  return (w.windows ?? [])
+    .map((win) => ({ ...win, from: Math.max(0, win.offset), to: Math.min(len, win.offset + win.width) }))
+    .filter((win) => win.to > win.from)
+    .sort((a, b) => a.from - b.from)
+}
+
+/** Kawałki ściany do wyciągnięcia w górę: pełna wysokość poza oknami, pod parapetem i nad nadprożem w oknach. */
+export function wallPieces(w: Wall, walls: Wall[], height: number): { poly: Pt[]; y0: number; y1: number }[] {
+  const poly = wallPolygon(w, walls)
+  const wins = wallWindows(w)
+  if (!wins.length) return [{ poly, y0: 0, y1: height }]
+  const len = wallLength(w) || 1
+  const o = { x: w.x1, y: w.y1 }
+  const d = { x: (w.x2 - w.x1) / len, y: (w.y2 - w.y1) / len }
+  const pieces: { poly: Pt[]; y0: number; y1: number }[] = []
+  let s = -1e6
+  for (const win of wins) {
+    if (win.from > s) pieces.push({ poly: clipAlong(poly, o, d, s, win.from), y0: 0, y1: height })
+    const part = clipAlong(poly, o, d, win.from, win.to)
+    if (win.sill > 0) pieces.push({ poly: part, y0: 0, y1: Math.min(win.sill, height) })
+    if (win.sill + win.height < height) pieces.push({ poly: part, y0: win.sill + win.height, y1: height })
+    s = Math.max(s, win.to)
+  }
+  pieces.push({ poly: clipAlong(poly, o, d, s, 1e6), y0: 0, y1: height })
+  return pieces.filter((p) => p.poly.length >= 3 && p.y1 > p.y0)
+}
+
+/** Otwór okna na rzucie: od lica ściany przez całą grubość. */
+export function windowOutline(w: Wall, from: number, to: number): Pt[] {
+  const len = wallLength(w) || 1
+  const d = { x: (w.x2 - w.x1) / len, y: (w.y2 - w.y1) / len }
+  const n = wallOutward(w)
+  const a = { x: w.x1 + d.x * from, y: w.y1 + d.y * from }
+  const b = { x: w.x1 + d.x * to, y: w.y1 + d.y * to }
+  const t = w.thickness
+  return [a, b, { x: b.x + n.x * t, y: b.y + n.y * t }, { x: a.x + n.x * t, y: a.y + n.y * t }]
+}
+
 /** Strona grubości dla łańcucha ścian: na zewnątrz wielokąta. */
 export function chainSide(points: Pt[]): 1 | -1 {
   let area = 0

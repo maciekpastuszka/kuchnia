@@ -89,7 +89,8 @@ export function exampleProject(): Project {
   const ROOM = { x: TOP + WALL, y: RIGHT - WALL - 120, w: 185, d: 120 }
   const VANITY_D = 46
   const walls: Wall[] = [
-    { id: uid(), x1: 0, y1: 0, x2: TOP, y2: 0, thickness: WALL, side: 1 },
+    // okno nad zlewem: 102 cm od lewego końca ściany, parapet 97,7 cm
+    { id: uid(), x1: 0, y1: 0, x2: TOP, y2: 0, thickness: WALL, side: 1, windows: [{ id: uid(), offset: 102, width: 174.6, sill: 97.7, height: 138.8 }] },
     { id: uid(), x1: TOP, y1: 0, x2: TOP, y2: RIGHT, thickness: WALL, side: 1 },
     { id: uid(), x1: TOP, y1: RIGHT, x2: TOP + THIRD, y2: RIGHT, thickness: WALL, side: 1 },
     // pomieszczenie obok 185 × 120 (wymiary wewnętrzne) za prawą ścianą kuchni, nad trzecią ścianą – dzieli z kuchnią te dwie ściany
@@ -184,17 +185,24 @@ export function exampleProject(): Project {
   return { walls, items, settings: { ...s } }
 }
 
-function loadInitial(): Project {
+/** Zapis projektu z chwilą zapisu – po niej wybieramy nowszą wersję (przeglądarka albo plik na dysku). */
+type SavedProject = Project & { savedAt?: number }
+
+function readLocal(): SavedProject | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const p = JSON.parse(raw) as Project
-      return { walls: p.walls ?? [], items: p.items ?? [], settings: { ...DEFAULT_SETTINGS, ...p.settings } }
-    }
+    if (raw) return JSON.parse(raw) as SavedProject
   } catch {
     // uszkodzony zapis – startujemy od przykładu
   }
-  return exampleProject()
+  return null
+}
+
+const normalize = (p: Project): Project => ({ walls: p.walls ?? [], items: p.items ?? [], settings: { ...DEFAULT_SETTINGS, ...p.settings } })
+
+function loadInitial(): Project {
+  const p = readLocal()
+  return p ? normalize(p) : exampleProject()
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -202,7 +210,7 @@ export const useStore = create<State>((set, get) => ({
   selection: null,
   tool: 'select',
   // w wąskim oknie podział na rzut i 3D robi oba widoki za małe
-  viewMode: window.innerWidth < 1300 ? 'plan' : 'split',
+  viewMode: 'split',
   drawThickness: 12,
   openFronts: {},
   selectedFront: null,
@@ -310,12 +318,36 @@ export function newRectRoom(w: number, d: number) {
   useStore.getState().loadProject({ walls: rectRoom(w, d), items: [], settings: useStore.getState().settings })
 }
 
+// w trybie dev projekt trafia też do pliku projekt-roboczy.json (wtyczka w vite.config.ts)
+const putFile = (p: SavedProject) =>
+  import.meta.env.DEV ? fetch('/api/project', { method: 'PUT', body: JSON.stringify(p, null, 2) }).catch(() => undefined) : undefined
+
 let saveTimer: number | undefined
 useStore.subscribe((s, prev) => {
   if (s.walls === prev.walls && s.items === prev.items && s.settings === prev.settings) return
   window.clearTimeout(saveTimer)
-  saveTimer = window.setTimeout(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot(useStore.getState()))), 300)
+  saveTimer = window.setTimeout(() => {
+    const saved: SavedProject = { ...snapshot(useStore.getState()), savedAt: Date.now() }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    putFile(saved)
+  }, 300)
 })
+
+// start: nowszy plik z dysku wygrywa z przeglądarką; bez pliku – zapisujemy na dysk to, co jest w przeglądarce
+if (import.meta.env.DEV) {
+  fetch('/api/project')
+    .then((r) => (r.ok ? (r.json() as Promise<SavedProject>) : null))
+    .then((file) => {
+      const local = readLocal()
+      if (file && (file.savedAt ?? 0) > (local?.savedAt ?? 0)) {
+        useStore.setState({ ...normalize(file), selection: null, past: [], future: [] })
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(file))
+      } else if (!file) {
+        putFile({ ...snapshot(useStore.getState()), savedAt: local?.savedAt ?? Date.now() })
+      }
+    })
+    .catch(() => undefined)
+}
 
 export const useSelectedItem = () => useStore((s) => (s.selection?.kind === 'item' ? s.items.find((i) => i.id === s.selection!.id) : undefined))
 export const useSelectedWall = () => useStore((s) => (s.selection?.kind === 'wall' ? s.walls.find((w) => w.id === s.selection!.id) : undefined))

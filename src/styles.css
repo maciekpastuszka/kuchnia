@@ -83,7 +83,79 @@ button.danger {
   border-bottom: 1px solid var(--border);
 }
 .brand {
-  margin-right: 10px;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.toolbar {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.toolbar button,
+.toolbar .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tool-group + .tool-group {
+  padding-left: 8px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border);
+}
+.counts {
+  white-space: nowrap;
+  margin-right: 6px;
+}
+.inline-field .field {
+  margin: 0;
+  gap: 6px;
+}
+.inline-field .field input {
+  width: 64px;
+}
+/* rozwijane menu w górnym pasku (np. nowy pokój) */
+.dropdown {
+  position: relative;
+  margin: 0;
+}
+.dropdown summary {
+  list-style: none;
+  color: inherit;
+  background: var(--control);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+.dropdown summary::-webkit-details-marker {
+  display: none;
+}
+.dropdown summary:hover {
+  border-color: var(--accent);
+}
+.dropdown[open] summary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 260px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+.dropdown-panel > button {
+  width: 100%;
+  margin-top: 4px;
 }
 .spacer {
   flex: 1;
@@ -109,6 +181,37 @@ button.danger {
   flex: 1;
   display: flex;
   min-height: 0;
+}
+
+/* pasek ikon po lewej i panel, który otwiera */
+.side {
+  display: flex;
+  flex: none;
+  min-height: 0;
+}
+.rail {
+  width: 48px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+}
+.rail-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+.rail-btn.active {
+  color: var(--accent);
 }
 
 .sidebar,
@@ -268,6 +371,19 @@ kbd {
   overflow: hidden;
   isolation: isolate;
 }
+.view-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
 .views-split .view + .view {
   border-left: 1px solid var(--border);
 }
@@ -309,6 +425,18 @@ kbd {
 .wall.selected {
   fill: var(--accent);
   stroke: var(--accent);
+}
+.window {
+  fill: var(--plan-bg);
+  stroke: var(--wall);
+  stroke-width: 1;
+}
+.window-glass {
+  stroke: var(--wall);
+  stroke-width: 1;
+}
+.window-dim text {
+  fill: var(--accent);
 }
 .shape {
   fill: var(--cab);

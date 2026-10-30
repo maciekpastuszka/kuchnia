@@ -102,6 +102,9 @@ export const MAT = {
   ring: () => cached('ring', () => new THREE.MeshBasicMaterial({ color: '#5a5c60' })),
   wall: (transparent: boolean) =>
     cached(`wall:${transparent}`, () => new THREE.MeshStandardMaterial({ color: '#ecebe7', roughness: 0.95, transparent, opacity: transparent ? 0.25 : 1, depthWrite: !transparent })),
+  windowFrame: () => cached('windowFrame', () => new THREE.MeshStandardMaterial({ color: '#f4f4f2', roughness: 0.5 })),
+  windowGlass: () =>
+    cached('windowGlass', () => new THREE.MeshStandardMaterial({ color: '#cfe3f0', metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.28, depthWrite: false })),
   floor: () => cached('floor', () => new THREE.MeshStandardMaterial({ color: '#d8d2c8', roughness: 0.9 })),
   fridge: () => cached('fridge', () => new THREE.MeshStandardMaterial({ color: '#b9bdc1', metalness: 0.6, roughness: 0.35 })),
   drawerBox: () => cached('drawerBox', () => new THREE.MeshStandardMaterial({ color: '#d4d6d9', metalness: 0.3, roughness: 0.5 })),

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { carcassBox, carcassYRanges, dimsLabel, footprint, heightRange } from '../catalog'
-import { itemBox, wallOutward, wallPolygon } from '../geometry'
+import { itemBox, wallLength, wallOutward, wallPieces, wallWindows } from '../geometry'
 import { useStore } from '../store'
 import type { Item, Settings, Wall } from '../types'
 import { DimLine3D, Z_LABELS } from './DimLine3D'
@@ -12,28 +12,83 @@ import { Furniture } from './Furniture'
 import { MAT } from './materials'
 
 function WallMesh({ wall, walls, height, transparent }: { wall: Wall; walls: Wall[]; height: number; transparent: boolean }) {
-  const geom = useMemo(() => {
-    const poly = wallPolygon(wall, walls)
-    const shape = new THREE.Shape(poly.map((p) => new THREE.Vector2(p.x, -p.y)))
-    const g = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false })
-    g.rotateX(-Math.PI / 2)
-    return g
-  }, [wall, walls, height])
-  useEffect(() => () => geom.dispose(), [geom])
-  const mesh = useRef<THREE.Mesh>(null)
-  // przekrój: ściana, za którą stoi kamera, znika
+  const geoms = useMemo(
+    () =>
+      wallPieces(wall, walls, height).map(({ poly, y0, y1 }) => {
+        const shape = new THREE.Shape(poly.map((p) => new THREE.Vector2(p.x, -p.y)))
+        const g = new THREE.ExtrudeGeometry(shape, { depth: y1 - y0, bevelEnabled: false })
+        g.rotateX(-Math.PI / 2)
+        g.translate(0, y0, 0)
+        return g
+      }),
+    [wall, walls, height],
+  )
+  useEffect(() => () => geoms.forEach((g) => g.dispose()), [geoms])
+  const group = useRef<THREE.Group>(null)
+  // przekrój: ściana (z oknami), za którą stoi kamera, znika
   useFrame(({ camera }) => {
-    if (!mesh.current) return
+    if (!group.current) return
     const n = wallOutward(wall)
     const side = (camera.position.x - wall.x1) * n.x + (camera.position.z - wall.y1) * n.y
-    mesh.current.visible = side < 0
+    group.current.visible = side < 0
   })
   const select = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 4) return
     e.stopPropagation()
     useStore.getState().select({ kind: 'wall', id: wall.id })
   }
-  return <mesh ref={mesh} geometry={geom} material={MAT.wall(transparent)} receiveShadow castShadow={!transparent} onClick={select} />
+  return (
+    <group ref={group} onClick={select}>
+      {geoms.map((g, i) => (
+        <mesh key={i} geometry={g} material={MAT.wall(transparent)} receiveShadow castShadow={!transparent} />
+      ))}
+      {wallWindows(wall).map((win) => (
+        <Window3D key={win.id} wall={wall} from={win.from} to={win.to} sill={win.sill} height={Math.min(win.height, height - win.sill)} />
+      ))}
+    </group>
+  )
+}
+
+const FRAME = 6
+const FRAME_DEPTH = 7
+
+/** Okno w otworze: rama z słupkiem przy szerokich oknach, szyby i parapet od strony pokoju. */
+function Window3D({ wall, from, to, sill, height }: { wall: Wall; from: number; to: number; sill: number; height: number }) {
+  const len = wallLength(wall) || 1
+  const d = { x: (wall.x2 - wall.x1) / len, y: (wall.y2 - wall.y1) / len }
+  const n = wallOutward(wall)
+  const t = wall.thickness
+  const mid = (from + to) / 2
+  const w = to - from
+  // środek grubości ściany; lokalna oś X wzdłuż ściany, +Z w stronę pokoju dla side = 1
+  const pos: [number, number, number] = [wall.x1 + d.x * mid + (n.x * t) / 2, 0, wall.y1 + d.y * mid + (n.y * t) / 2]
+  const rotY = Math.atan2(-d.y, d.x)
+  const room = wall.side
+  const sashes = w > 120 ? 2 : 1
+  const bar = (x: number, y: number, bw: number, bh: number, key: string) => (
+    <mesh key={key} position={[x, y, 0]} material={MAT.windowFrame()} castShadow>
+      <boxGeometry args={[bw, bh, FRAME_DEPTH]} />
+    </mesh>
+  )
+  const paneW = (w - FRAME * (sashes + 1)) / sashes
+  return (
+    <group position={pos} rotation={[0, rotY, 0]}>
+      {bar(0, sill + FRAME / 2, w, FRAME, 'b')}
+      {bar(0, sill + height - FRAME / 2, w, FRAME, 't')}
+      {bar(-w / 2 + FRAME / 2, sill + height / 2, FRAME, height, 'l')}
+      {bar(w / 2 - FRAME / 2, sill + height / 2, FRAME, height, 'r')}
+      {sashes === 2 && bar(0, sill + height / 2, FRAME, height, 'm')}
+      {Array.from({ length: sashes }, (_, i) => (
+        <mesh key={`g${i}`} position={[-w / 2 + FRAME + paneW / 2 + i * (paneW + FRAME), sill + height / 2, 0]} material={MAT.windowGlass()}>
+          <boxGeometry args={[paneW, height - 2 * FRAME, 0.6]} />
+        </mesh>
+      ))}
+      {/* parapet: od ramy do lica ściany + 3 cm wysięgu, górą na wysokości parapetu */}
+      <mesh position={[0, sill - 1, (room * (t / 2 + 3)) / 2]} material={MAT.windowFrame()} castShadow receiveShadow>
+        <boxGeometry args={[w + 6, 2, t / 2 + 3]} />
+      </mesh>
+    </group>
+  )
 }
 
 function ItemMesh({ item, items, s, selected }: { item: Item; items: Item[]; s: Settings; selected: boolean }) {

@@ -3,6 +3,7 @@ import { CATALOG, baseWallGap, columnCompanions, counterTop, fmt, newItem } from
 import { exampleProject, newRectRoom, useStore } from '../store'
 import type { BoardMaterial, HandleColor, Project, Settings, StoneColor } from '../types'
 import { BOARD_LABEL, BOARD_SWATCH, HANDLE_LABEL, STONE_LABEL } from '../three/materials'
+import { Icon, type IconName } from './icons'
 import { NumberField } from './NumberField'
 
 function roomCenter() {
@@ -19,70 +20,111 @@ function afterLoad() {
   window.setTimeout(() => window.dispatchEvent(new Event('3d:reset')), 50)
 }
 
-export function Sidebar() {
+type Panel = 'catalog' | 'settings'
+
+const PANELS: { key: Panel; icon: IconName; label: string }[] = [
+  { key: 'catalog', icon: 'cabinet', label: 'Dodaj meble' },
+  { key: 'settings', icon: 'settings', label: 'Ustawienia' },
+]
+
+/** Pasek ikon po lewej; ikona otwiera swój panel, ponowne kliknięcie go zwija. */
+export function SideRail() {
+  const [open, setOpen] = useState<Panel | null>('catalog')
+  return (
+    <div className="side">
+      <nav className="rail">
+        {PANELS.map((p) => (
+          <button
+            key={p.key}
+            className={`rail-btn${open === p.key ? ' active' : ''}`}
+            title={p.label}
+            aria-label={p.label}
+            aria-pressed={open === p.key}
+            onClick={() => setOpen(open === p.key ? null : p.key)}
+          >
+            <Icon name={p.icon} size={20} />
+          </button>
+        ))}
+      </nav>
+      {open && <aside className="sidebar">{open === 'catalog' ? <CatalogPanel /> : <SettingsPanel />}</aside>}
+    </div>
+  )
+}
+
+/** Narzędzia ścian w górnym pasku: zaznaczanie, rysowanie, miarka, nowy pokój. */
+export function WallTools() {
   const tool = useStore((s) => s.tool)
   const drawThickness = useStore((s) => s.drawThickness)
   const [room, setRoom] = useState({ w: 400, d: 300 })
-
+  const tools: { key: 'select' | 'wall' | 'measure'; icon: IconName; label: string; title?: string }[] = [
+    { key: 'select', icon: 'pointer', label: 'Zaznacz' },
+    { key: 'wall', icon: 'wall', label: 'Rysuj ściany' },
+    { key: 'measure', icon: 'ruler', label: 'Miarka', title: 'M' },
+  ]
   return (
-    <aside className="sidebar">
-      <section>
-        <h3>Ściany</h3>
-        <div className="row">
-          <button className={tool === 'select' ? 'active' : ''} onClick={() => useStore.getState().setTool('select')}>
-            Zaznacz
+    <div className="tool-group">
+      <div className="segmented">
+        {tools.map((t) => (
+          <button key={t.key} className={tool === t.key ? 'active' : ''} title={t.title} onClick={() => useStore.getState().setTool(t.key)}>
+            <Icon name={t.icon} size={16} />
+            {t.label}
           </button>
-          <button className={tool === 'wall' ? 'active' : ''} onClick={() => useStore.getState().setTool('wall')}>
-            Rysuj ściany
-          </button>
-          <button className={tool === 'measure' ? 'active' : ''} onClick={() => useStore.getState().setTool('measure')} title="M">
-            Miarka
-          </button>
-        </div>
-        {tool === 'wall' && <NumberField label="Grubość nowej ściany" value={drawThickness} onChange={(v) => useStore.getState().setDrawThickness(v)} min={1} />}
-        <details>
-          <summary>Nowy pokój prostokątny</summary>
+        ))}
+      </div>
+      {tool === 'wall' && (
+        <span className="inline-field">
+          <NumberField label="Grubość" value={drawThickness} onChange={(v) => useStore.getState().setDrawThickness(v)} min={1} />
+        </span>
+      )}
+      <details className="dropdown">
+        <summary className="button">
+          <Icon name="room" size={16} />
+          Nowy pokój
+        </summary>
+        <div className="dropdown-panel">
           <NumberField label="Szerokość (wewn.)" value={room.w} onChange={(w) => setRoom({ ...room, w })} min={50} />
           <NumberField label="Głębokość (wewn.)" value={room.d} onChange={(d) => setRoom({ ...room, d })} min={50} />
           <button
-            onClick={() => {
+            onClick={(e) => {
               if (confirm('Utworzyć nowy pokój? Obecne ściany i meble zostaną usunięte (można cofnąć Ctrl+Z).')) {
                 newRectRoom(room.w, room.d)
                 afterLoad()
+                e.currentTarget.closest('details')?.removeAttribute('open')
               }
             }}
           >
-            Utwórz pokój
+            Utwórz pokój prostokątny
           </button>
-        </details>
-      </section>
-
-      <section>
-        <h3>Dodaj</h3>
-        <div className="catalog">
-          {CATALOG.map((e) => (
-            <button
-              key={e.key}
-              className="catalog-item"
-              onClick={() => {
-                const c = roomCenter()
-                const st = useStore.getState()
-                const added = newItem(e, c.x, c.y, st.settings)
-                st.addItem(added)
-                // słupki dostają od razu swoje szafki górne (osobne elementy); zaznaczony zostaje słupek
-                for (const companion of columnCompanions(added, st.settings)) useStore.setState((x) => ({ items: [...x.items, companion] }))
-              }}
-            >
-              <strong>{e.label}</strong>
-              <span>{e.hint}</span>
-            </button>
-          ))}
         </div>
-      </section>
+      </details>
+    </div>
+  )
+}
 
-      <SettingsPanel />
-      <ProjectPanel />
-    </aside>
+function CatalogPanel() {
+  return (
+    <section>
+      <h3>Dodaj meble</h3>
+      <div className="catalog">
+        {CATALOG.map((e) => (
+          <button
+            key={e.key}
+            className="catalog-item"
+            onClick={() => {
+              const c = roomCenter()
+              const st = useStore.getState()
+              const added = newItem(e, c.x, c.y, st.settings)
+              st.addItem(added)
+              // słupki dostają od razu swoje szafki górne (osobne elementy); zaznaczony zostaje słupek
+              for (const companion of columnCompanions(added, st.settings)) useStore.setState((x) => ({ items: [...x.items, companion] }))
+            }}
+          >
+            <strong>{e.label}</strong>
+            <span>{e.hint}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -180,7 +222,8 @@ function BoardSelect({ value, onChange }: { value: BoardMaterial; onChange: (v: 
   )
 }
 
-function ProjectPanel() {
+/** Zapis, wczytanie i przykład – w górnym pasku po prawej. */
+export function ProjectMenu() {
   const fileRef = useRef<HTMLInputElement>(null)
   const exportJson = () => {
     const { walls, items, settings } = useStore.getState()
@@ -202,22 +245,27 @@ function ProjectPanel() {
     }
   }
   return (
-    <section>
-      <h3>Projekt</h3>
-      <div className="row wrap">
-        <button onClick={exportJson}>Zapisz JSON</button>
-        <button onClick={() => fileRef.current?.click()}>Wczytaj JSON</button>
-        <button
-          onClick={() => {
-            useStore.getState().loadProject(exampleProject())
-            afterLoad()
-          }}
-        >
-          Moja kuchnia (Z)
-        </button>
-      </div>
+    <div className="tool-group" title="Projekt zapisuje się automatycznie w przeglądarce">
+      <button onClick={exportJson} title="Pobierz projekt jako plik JSON">
+        <Icon name="save" size={16} />
+        Zapisz
+      </button>
+      <button onClick={() => fileRef.current?.click()} title="Wczytaj projekt z pliku JSON">
+        <Icon name="open" size={16} />
+        Wczytaj
+      </button>
+      <button
+        title="Wczytaj przykładową kuchnię (Z)"
+        onClick={() => {
+          if (!confirm('Wczytać przykładową kuchnię? Obecny projekt zostanie zastąpiony (można cofnąć Ctrl+Z).')) return
+          useStore.getState().loadProject(exampleProject())
+          afterLoad()
+        }}
+      >
+        <Icon name="home" size={16} />
+        Przykład
+      </button>
       <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
-      <p className="derived">Projekt zapisuje się automatycznie w przeglądarce.</p>
-    </section>
+    </div>
   )
 }

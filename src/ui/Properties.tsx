@@ -21,10 +21,11 @@ import {
   sidePanelPieces,
   wallCarcassBottom,
   wallPanelDepth,
+  uid,
 } from '../catalog'
 import { itemBox, wallLength } from '../geometry'
 import { useSelectedItem, useSelectedWall, useStore } from '../store'
-import type { Item, Settings, UpperOf, Wall } from '../types'
+import type { Item, Settings, UpperOf, Wall, WallWindow } from '../types'
 import { itemWarnings } from '../validation'
 import { counterItemClearances } from '../clearances'
 import { NumberField } from './NumberField'
@@ -425,7 +426,47 @@ function WallProps({ wall }: { wall: Wall }) {
         </button>
       </div>
       <p className="derived">Zmiana długości przesuwa koniec ściany razem z dołączoną ścianą. Końce można też przeciągać na rzucie.</p>
+      <WallWindowsProps wall={wall} />
     </section>
+  )
+}
+
+function WallWindowsProps({ wall }: { wall: Wall }) {
+  const store = useStore.getState()
+  const wins = wall.windows ?? []
+  const len = wallLength(wall)
+  const set = (windows: WallWindow[]) => {
+    store.checkpoint()
+    store.updateWall(wall.id, { windows })
+  }
+  const patch = (id: string, p: Partial<WallWindow>) => set(wins.map((w) => (w.id === id ? { ...w, ...p } : w)))
+  const add = () => {
+    const width = Math.min(100, len)
+    set([...wins, { id: uid(), offset: Math.max(0, (len - width) / 2), width, sill: 90, height: 140 }])
+  }
+  return (
+    <>
+      <h3>Okna</h3>
+      {wins.map((w, i) => (
+        <div key={w.id} className="window-props">
+          <p className="derived">
+            Okno {i + 1} – położenie liczone od początku ściany (wymiary widać na rzucie)
+          </p>
+          <NumberField label="Od początku ściany" value={w.offset} min={0} step={0.1} onChange={(v) => patch(w.id, { offset: v })} />
+          <NumberField label="Szerokość" value={w.width} min={1} step={0.1} onChange={(v) => patch(w.id, { width: v })} />
+          <NumberField label="Parapet od podłogi" value={w.sill} min={0} step={0.1} onChange={(v) => patch(w.id, { sill: v })} />
+          <NumberField label="Wysokość" value={w.height} min={1} step={0.1} onChange={(v) => patch(w.id, { height: v })} />
+          <div className="row">
+            <button className="danger" onClick={() => set(wins.filter((o) => o.id !== w.id))}>
+              Usuń okno
+            </button>
+          </div>
+        </div>
+      ))}
+      <div className="row">
+        <button onClick={add}>+ Dodaj okno</button>
+      </div>
+    </>
   )
 }
 
@@ -439,7 +480,7 @@ function Help() {
           <b>Rysuj ściany</b>: klikaj kolejne narożniki, wpisz liczbę i Enter, żeby podać dokładną długość.
         </li>
         <li>Narysowana linia to lico ściany od strony kuchni.</li>
-        <li>Meble dodasz z listy po lewej, a potem przeciągniesz je na rzucie. Przyciągają się do ścian (z luzem {fmt(gap)} cm za szafkami dolnymi) i do siebie nawzajem.</li>
+        <li>Meble dodasz z panelu „Dodaj meble” (ikona po lewej), a potem przeciągniesz je na rzucie. Przyciągają się do ścian (z luzem {fmt(gap)} cm za szafkami dolnymi) i do siebie nawzajem.</li>
         <li>
           <kbd>R</kbd> / <kbd>Shift+R</kbd> – obrót o 90°, <kbd>Del</kbd> – usuń, <kbd>Ctrl+D</kbd> – duplikuj, strzałki – przesuń o 1 cm (z Shift o 10 cm).
         </li>

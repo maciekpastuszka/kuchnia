@@ -9,6 +9,18 @@ export interface Wall {
   thickness: number
   /** Narysowana linia to lico ściany od strony pokoju; grubość idzie na bok `side` (1 = lewa normalna, -1 = prawa). */
   side: 1 | -1
+  windows?: WallWindow[]
+}
+
+/** Okno w ścianie – otwór na całą grubość. */
+export interface WallWindow {
+  id: string
+  /** Od początku ściany (x1, y1) wzdłuż lica do bliższej krawędzi otworu. */
+  offset: number
+  width: number
+  /** Wysokość parapetu (dolnej krawędzi otworu) od podłogi. */
+  sill: number
+  height: number
 }
 
 export type ItemType =
