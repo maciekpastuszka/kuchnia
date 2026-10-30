@@ -237,18 +237,9 @@ function BoardSelect({ value, onChange }: { value: BoardMaterial; onChange: (v: 
   )
 }
 
-/** Zapis, wczytanie i przykład – w górnym pasku po prawej. */
-export function ProjectMenu() {
+/** Wczytanie projektu z pliku JSON – w menu projektu i jako jedyny przycisk na wąskim ekranie. */
+export function LoadButton() {
   const fileRef = useRef<HTMLInputElement>(null)
-  const exportJson = () => {
-    const { walls, items, settings } = useStore.getState()
-    const blob = new Blob([JSON.stringify({ walls, items, settings }, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'kuchnia-projekt.json'
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
   const importJson = async (file: File) => {
     try {
       const p = JSON.parse(await file.text()) as Project
@@ -260,15 +251,34 @@ export function ProjectMenu() {
     }
   }
   return (
+    <>
+      <button onClick={() => fileRef.current?.click()} title="Wczytaj projekt z pliku JSON">
+        <Icon name="open" size={16} />
+        Wczytaj
+      </button>
+      <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
+    </>
+  )
+}
+
+/** Zapis, wczytanie i przykład – w górnym pasku po prawej. */
+export function ProjectMenu() {
+  const exportJson = () => {
+    const { walls, items, settings } = useStore.getState()
+    const blob = new Blob([JSON.stringify({ walls, items, settings }, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'kuchnia-projekt.json'
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+  return (
     <div className="tool-group" title="Projekt zapisuje się automatycznie w przeglądarce">
       <button onClick={exportJson} title="Pobierz projekt jako plik JSON">
         <Icon name="save" size={16} />
         Zapisz
       </button>
-      <button onClick={() => fileRef.current?.click()} title="Wczytaj projekt z pliku JSON">
-        <Icon name="open" size={16} />
-        Wczytaj
-      </button>
+      <LoadButton />
       <button
         title="Wczytaj przykładową kuchnię (Z)"
         onClick={() => {
@@ -280,7 +290,6 @@ export function ProjectMenu() {
         <Icon name="home" size={16} />
         Przykład
       </button>
-      <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
     </div>
   )
 }

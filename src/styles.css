@@ -387,6 +387,55 @@ kbd {
 .views-split .view + .view {
   border-left: 1px solid var(--border);
 }
+.views {
+  position: relative;
+}
+.narrow-load {
+  display: none;
+}
+
+/* wąski ekran: bez górnego paska, ikon i pomocy; rzut nad 3D, zaznaczony element pod widokami */
+@media (max-width: 999px) {
+  .toolbar,
+  .side,
+  .properties-help {
+    display: none;
+  }
+  .main {
+    flex-direction: column;
+  }
+  .views {
+    flex-direction: column;
+    min-height: 0;
+  }
+  .view {
+    min-height: 0;
+  }
+  .views-split .view + .view {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  /* panel zaznaczenia najwyżej 20% wysokości – rzut i 3D mają co najmniej 80% */
+  .properties {
+    width: 100%;
+    max-height: 20%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .narrow-load {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 30;
+  }
+  .narrow-load button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+  }
+}
 .view > canvas,
 .view > div:not(.zoom-controls) {
   position: absolute !important;

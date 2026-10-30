@@ -4,7 +4,7 @@ import { useStore } from './store'
 import { Scene3D } from './three/Scene3D'
 import { Properties } from './ui/Properties'
 import { Icon } from './ui/icons'
-import { ProjectMenu, SideRail, WallTools } from './ui/Sidebar'
+import { LoadButton, ProjectMenu, SideRail, WallTools } from './ui/Sidebar'
 
 function useShortcuts() {
   useEffect(() => {
@@ -62,7 +62,7 @@ function useShortcuts() {
   }, [])
 }
 
-/** Rzut i 3D zawsze obok siebie; ikona w rogu powiększa widok na całe okno i przywraca połowę. */
+/** Rzut i 3D obok siebie (na wąskim ekranie jeden pod drugim); ikona w rogu powiększa widok na całe okno i przywraca połowę. */
 function ViewPane({ mode, label, children }: { mode: 'plan' | '3d'; label: string; children: React.ReactNode }) {
   const viewMode = useStore((s) => s.viewMode)
   const maximized = viewMode === mode
@@ -111,6 +111,10 @@ export default function App() {
       <div className="main">
         <SideRail />
         <div className={`views views-${viewMode}`}>
+          {/* na wąskim ekranie (bez górnego paska) zostaje tylko wczytanie projektu */}
+          <div className="narrow-load">
+            <LoadButton />
+          </div>
           {viewMode !== '3d' && (
             <ViewPane mode="plan" label="rzut">
               <PlanView />

@@ -45,7 +45,7 @@ export function Properties() {
   const item = useSelectedItem()
   const wall = useSelectedWall()
   return (
-    <aside className="properties">
+    <aside className={`properties${item || wall ? '' : ' properties-help'}`}>
       {item ? <ItemProps item={item} /> : wall ? <WallProps wall={wall} /> : <Help />}
     </aside>
   )
